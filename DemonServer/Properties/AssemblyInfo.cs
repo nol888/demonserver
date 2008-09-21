@@ -7,21 +7,22 @@
 |	This file is part of Demon.												|
 |																			|
 |	Demon is free software: you can redistribute it and/or modify			|
-|	it under the terms of the GNU General Public License as published by	|
-|	the Free Software Foundation, either version 3 of the License, or		|
-|	(at your option) any later version.										|
+|	it under the terms of the GNU Affero General Public License as			|
+|	published by the Free Software Foundation, either version 3 of the		|
+|	License, or (at your option) any later version.							|
 |																			|
-|	Demon is distributed in the hope that it will be useful,				|
+|	This program is distributed in the hope that it will be useful,			|
 |	but WITHOUT ANY WARRANTY; without even the implied warranty of			|
 |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the			|
-|	GNU General Public License for more details.							|
+|	GNU Affero General Public License for more details.						|
 |																			|
-|	You should have received a copy of the GNU General Public License		|
-|	along with Foobar.  If not, see <http://www.gnu.org/licenses/>.			|
+|	You should have received a copy of the GNU Affero General Public License|
+|	along with this program.  If not, see <http://www.gnu.org/licenses/>.	|
+|																			|
 |===========================================================================|
-|	> $Date$																|
-|	> $Revision$															|
-|	> $Author$																|
+|	> $Date$
+|	> $Revision$
+|	> $Author$
 +---------------------------------------------------------------------------+
 */
 using System.Reflection;
@@ -32,11 +33,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("DemonServer")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A dAmn emulator written in C#.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Silly Pickles")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("DemonServer")]
-[assembly: AssemblyCopyright("Copyright © Silly Pickles 2008")]
+[assembly: AssemblyCopyright("Copyright © 2008 Nol888")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -19,9 +19,9 @@
 |	You should have received a copy of the GNU General Public License		|
 |	along with Foobar.  If not, see <http://www.gnu.org/licenses/>.			|
 |===========================================================================|
-|	> $Date$																|
-|	> $Revision$															|
-|	> $Author$																|
+|	> $Date$
+|	> $Revision$
+|	> $Author$
 +---------------------------------------------------------------------------+
 */
 using System.Reflection;
@@ -32,11 +32,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("CommonLib")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Common library of functions, classes, and utilities.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Silly Pickles")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("CommonLib")]
-[assembly: AssemblyCopyright("Copyright © Silly Pickles 2008")]
+[assembly: AssemblyCopyright("Copyright © 2008 Nol888")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
