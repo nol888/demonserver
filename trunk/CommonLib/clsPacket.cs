@@ -1,0 +1,151 @@
+﻿/*
++===========================================================================+
+|	Demon - dAmn Emulator													|
+|===========================================================================|
+|	Copyright © 2008 Nol888													|
+|===========================================================================|
+|	This file is part of Demon.												|
+|																			|
+|	Demon is free software: you can redistribute it and/or modify			|
+|	it under the terms of the GNU Affero General Public License as			|
+|	published by the Free Software Foundation, either version 3 of the		|
+|	License, or (at your option) any later version.							|
+|																			|
+|	This program is distributed in the hope that it will be useful,			|
+|	but WITHOUT ANY WARRANTY; without even the implied warranty of			|
+|	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the			|
+|	GNU Affero General Public License for more details.						|
+|																			|
+|	You should have received a copy of the GNU Affero General Public License|
+|	along with this program.  If not, see <http://www.gnu.org/licenses/>.	|
+|																			|
+|===========================================================================|
+|	> $Date: 2008-09-21 13:57:19 -0400 (Sun, 21 Sep 2008) $
+|	> $Revision: 3 $
+|	> $Author: nol888 $
++===========================================================================+
+*/
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CommonLib
+{
+	public class Packet
+	{
+		#region Private Properties
+		private string _cmd = "";
+		private string _param = "";
+		private Dictionary<string, string> _args;
+		private string _body;
+		#endregion
+
+		#region Constructors
+		public Packet() : this("", "")	{}
+		public Packet(string cmd, string param){
+			this._cmd = cmd;
+			this._param = param;
+			this._args = new Dictionary<string, string>();
+			this._body = "";
+		}
+
+		public Packet(string data)
+		{
+			int lineLength, spacePos, valuePos;
+			string firstLine, nextLines;
+
+			lineLength = data.IndexOf('\n');
+			if (lineLength < 0)
+			{
+				// Ugh, we got a bad one here.
+				this._cmd = "";
+				this._param = "";
+				this._args = new Dictionary<string, string>();
+				this._body = "";
+				return;
+			}
+
+			firstLine = data.Substring(0, i);
+
+			this.cmd = tmp.Split(' ')[0];
+
+			spacePos = tmp.IndexOf(' ');
+			this.param = (spacePos > 0) ? (tmp.Substring(j + 1)) : ("");
+
+			nextLines = data.Substring(firstLine + 1);
+
+			pthis.args = new Dictionary<string, string>();
+			this.body = null;
+
+			while (true)
+			{
+				if ((nextLines.Length == 0) || (nextLines[0] == '\n')) break;
+
+				lineLength = data.IndexOf('\n');
+				valuePos = data.IndexOf('=');
+
+				if (valuePos > lineLength) break;
+
+				this.args[data.Substring(0, valuePos)] = data.Substring(valuePos + 1, lineLength - (valuePos + 1));
+				nextLines = nextLines.Substring(lineLength + 1);
+			}
+
+			if (data != null && data.Length > 0) this.body = nextLines.Substring(1);
+			else this.body = "";
+		}
+		#endregion
+
+		#region Public Properties
+		public string cmd
+		{
+			get { return _cmd; }
+			set { _cmd = value; }
+		}
+		public string param
+		{
+			get { return _param; }
+			set { _param = value; }
+		}
+		public string body
+		{
+			get { return argsAndBody.body; }
+			set { argsAndBody.body = value; }
+		}
+		public Dictionary<string, string> args
+		{
+			get { return argsAndBody.args; }
+			set { argsAndBody.args = value; }
+		}
+		#endregion
+
+		#region Cast Operators
+		public implicit operator Packet(string data)
+		{
+			return new Packet(data);
+		}
+		public implicit operator string(Packet packet)
+		{
+			StringBuilder packetS = new StringBuilder();
+
+			packetS.Append(packet.cmd);
+			if (packet.param != "") packetS.AppendFormat(" {0}\n", packet.param);
+			else packetS.Append("\n");
+
+			if (packet.args.Count > 0)
+			{
+				foreach (KeyValuePair<string, string> arg in packet.args)
+				{
+					packetS.AppendFormat("{0}={1}\n", arg.Key, arg.Value);
+				}
+			}
+
+			packetS.Append("\n");
+
+			packetS.Append(this.body);
+
+			return packetS.ToString();
+		}
+		#endregion
+	}
+}
