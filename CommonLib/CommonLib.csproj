@@ -51,7 +51,9 @@
   <ItemGroup>
     <Compile Include="clsConsole.cs" />
     <Compile Include="clsODBC.cs" />
+    <Compile Include="clsPacket.cs" />
     <Compile Include="clsSocket.cs" />
+    <Compile Include="clsXmlConfigReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
