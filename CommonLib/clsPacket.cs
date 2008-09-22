@@ -73,7 +73,7 @@ namespace CommonLib
 			spacePos = firstLine.IndexOf(' ');
 			this.param = (spacePos > 0) ? (firstLine.Substring(spacePos + 1)) : ("");
 
-			nextLines = firstLine.Substring(lineLength + 1);
+			nextLines = data.Substring(lineLength + 1);
 
 			this.args = new Dictionary<string, string>();
 			this.body = null;
@@ -82,12 +82,12 @@ namespace CommonLib
 			{
 				if ((nextLines.Length == 0) || (nextLines[0] == '\n')) break;
 
-				lineLength = data.IndexOf('\n');
-				valuePos = data.IndexOf('=');
+				lineLength = nextLines.IndexOf('\n');
+				valuePos = nextLines.IndexOf('=');
 
 				if (valuePos > lineLength) break;
 
-				this.args[data.Substring(0, valuePos)] = data.Substring(valuePos + 1, lineLength - (valuePos + 1));
+				this.args[nextLines.Substring(0, valuePos)] = nextLines.Substring(valuePos + 1, lineLength - (valuePos + 1));
 				nextLines = nextLines.Substring(lineLength + 1);
 			}
 
@@ -119,22 +119,18 @@ namespace CommonLib
 		}
 		#endregion
 
-		#region Cast Operators
-		public static implicit operator Packet(string data)
-		{
-			return new Packet(data);
-		}
-		public static implicit operator string(Packet packet)
+		#region Public Methods
+		public override string ToString()
 		{
 			StringBuilder packetS = new StringBuilder();
 
-			packetS.Append(packet.cmd);
-			if (packet.param != "") packetS.AppendFormat(" {0}\n", packet.param);
+			packetS.Append(this.cmd);
+			if (this.param != "") packetS.AppendFormat(" {0}\n", this.param);
 			else packetS.Append("\n");
 
-			if (packet.args.Count > 0)
+			if (this.args.Count > 0)
 			{
-				foreach (KeyValuePair<string, string> arg in packet.args)
+				foreach (KeyValuePair<string, string> arg in this.args)
 				{
 					packetS.AppendFormat("{0}={1}\n", arg.Key, arg.Value);
 				}
@@ -142,9 +138,20 @@ namespace CommonLib
 
 			packetS.Append("\n");
 
-			packetS.Append(packet.body);
+			packetS.Append(this.body);
 
 			return packetS.ToString();
+		}
+		#endregion
+
+		#region Cast Operators
+		public static explicit operator Packet(string data)
+		{
+			return new Packet(data);
+		}
+		public static explicit operator string(Packet packet)
+		{
+			return packet.ToString();
 		}
 		#endregion
 	}

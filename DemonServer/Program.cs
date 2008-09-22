@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System.Text;
+using System.Net;
 using System.Net.Sockets;
 
 namespace DemonServer
@@ -66,6 +67,10 @@ namespace DemonServer
 			__clientConnected = new AsyncCallback(this.clientConnected);
 			Console.CancelKeyPress += delegate { this.cleanUp(); };
 
+			// Load config first.
+			CommonLib.XmlConfigReader configReader = new CommonLib.XmlConfigReader("config.xml");
+			this.Configuration = configReader.ReadConfig();
+
 			// Init the socket list.
 			int i = maxConnections;
 			while (i-- > 0)
@@ -73,6 +78,21 @@ namespace DemonServer
 				unusedSockets.Push(i);
 			}
 
+			// Start up the main socket.
+			this.listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+			this.listenSocket.Bind(new IPEndPoint(IPAddress.Parse(this.Configuration["bind-ip"]), int.Parse(this.Configuration["bind-port"])));
+
+			// Run some packet parsing tests.
+			CommonLib.Packet pkt = new CommonLib.Packet("recv chat:Botdom\n\nmsg main\n\nLololo.");
+			CommonLib.Packet pkt2 = new CommonLib.Packet("kick chat:chatroom\nu=username\n\nReason lol.");
+			CommonLib.Packet pkt3 = new CommonLib.Packet("kick", "chat:chatroom");
+			CommonLib.Packet pkt4 = new CommonLib.Packet();
+			pkt4.cmd = "send";
+			pkt4.param = "chat:Botdom";
+			pkt4.body = "ban Loluser";
+			pkt4.args.Add("fake", "arg");
+			CommonLib.Packet pkt5 = (CommonLib.Packet) pkt4.ToString();
+			string pkt6 = (string) pkt5;
 
 			return 0;
 		}
