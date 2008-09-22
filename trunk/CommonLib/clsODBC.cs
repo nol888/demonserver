@@ -124,7 +124,7 @@ namespace CommonLib
 				if (InternalDBC.State == System.Data.ConnectionState.Closed)
 				{
 					Console.ShowError("MySQL Error!  MySQL server has gone away.  Query: " + QueryString);
-					return null;
+					return new DBResult();
 				}
 				MySqlCommand Command;
 				MySqlDataReader Result;
@@ -138,7 +138,7 @@ namespace CommonLib
 				catch (MySqlException Ex)
 				{
 					this.LastException = Ex;
-					return null;
+					return new DBResult();
 				}
 			}
 		}
@@ -156,7 +156,7 @@ namespace CommonLib
 			catch (MySqlException Ex)
 			{
 				this.LastException = Ex;
-				return null;
+				return new DBResult();
 			}
 		}
 
@@ -281,7 +281,6 @@ namespace CommonLib
 			}
 			Reader.Close();
 			this.ClosedReader = Reader;
-			Reader.Field
 		}
 
 		public Hashtable FetchRow()
