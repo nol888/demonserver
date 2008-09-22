@@ -66,16 +66,16 @@ namespace CommonLib
 				return;
 			}
 
-			firstLine = data.Substring(0, i);
+			firstLine = data.Substring(0, lineLength);
 
-			this.cmd = tmp.Split(' ')[0];
+			this.cmd = firstLine.Split(' ')[0];
 
-			spacePos = tmp.IndexOf(' ');
-			this.param = (spacePos > 0) ? (tmp.Substring(j + 1)) : ("");
+			spacePos = firstLine.IndexOf(' ');
+			this.param = (spacePos > 0) ? (firstLine.Substring(spacePos + 1)) : ("");
 
-			nextLines = data.Substring(firstLine + 1);
+			nextLines = firstLine.Substring(lineLength + 1);
 
-			pthis.args = new Dictionary<string, string>();
+			this.args = new Dictionary<string, string>();
 			this.body = null;
 
 			while (true)
@@ -99,32 +99,32 @@ namespace CommonLib
 		#region Public Properties
 		public string cmd
 		{
-			get { return _cmd; }
-			set { _cmd = value; }
+			get { return this._cmd; }
+			set { this._cmd = value; }
 		}
 		public string param
 		{
-			get { return _param; }
-			set { _param = value; }
+			get { return this._param; }
+			set { this._param = value; }
 		}
 		public string body
 		{
-			get { return argsAndBody.body; }
-			set { argsAndBody.body = value; }
+			get { return this._body; }
+			set { this._body = value; }
 		}
 		public Dictionary<string, string> args
 		{
-			get { return argsAndBody.args; }
-			set { argsAndBody.args = value; }
+			get { return this._args; }
+			set { this._args = value; }
 		}
 		#endregion
 
 		#region Cast Operators
-		public implicit operator Packet(string data)
+		public static implicit operator Packet(string data)
 		{
 			return new Packet(data);
 		}
-		public implicit operator string(Packet packet)
+		public static implicit operator string(Packet packet)
 		{
 			StringBuilder packetS = new StringBuilder();
 
@@ -142,7 +142,7 @@ namespace CommonLib
 
 			packetS.Append("\n");
 
-			packetS.Append(this.body);
+			packetS.Append(packet.body);
 
 			return packetS.ToString();
 		}

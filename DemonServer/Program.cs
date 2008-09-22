@@ -107,7 +107,7 @@ namespace DemonServer
 			try
 			{
 				// Set up the event listeners.
-				clients[SocketID] = new CommonLib.Socket(SocketID, MainSocket.EndAccept(Result));
+				clients[SocketID] = new CommonLib.Socket(SocketID, listenSocket.EndAccept(Result));
 				clients[SocketID].OnDataArrival += new CommonLib.Socket.__OnDataArrival(Program_OnDataArrival);
 				clients[SocketID].OnDisconnect += new CommonLib.Socket.__OnDisconnect(Program_OnDisconnect);
 				clients[SocketID].OnError += new CommonLib.Socket.__OnError(Program_OnError);
@@ -128,30 +128,18 @@ namespace DemonServer
 			finally
 			{
 				// Yea, let's stop hogging the main socket.
-				MainSocket.BeginAccept(__clientConnected, null);
+				listenSocket.BeginAccept(__clientConnected, null);
 			}
 		}
-		void Program_OnDataArrival(int SocketID, byte[] ByteArray, string HexData)
+		void Program_OnDataArrival(int SocketID, byte[] ByteArray)
 		{
-			byte[] DeHeader = new byte[ByteArray.Length - 4];
-			CommonLib.Utilities.CopyBytes(DeHeader, 0, ByteArray, 4, ByteArray.Length - 4);
-			ByteArray = new byte[DeHeader.Length];
-			CommonLib.EncryptLib.Decrypt(clients[SocketID].SendIV, DeHeader, ByteArray, DeHeader.Length);
-			CommonLib.EncryptLib.GenerateIV(clients[SocketID].SendIV);
-			//CommonLib.Console.ShowInfo("Got packet from client " + SocketID.ToString() + ": " + CommonLib.EncryptLib.ByteArrayToHex(ByteArray));
-			byte[] ResponsePacket = Socket_ProcessPacket(SocketID, new CommonLib.Buffer(ByteArray));
-
-			if (ResponsePacket.Length < 1)
+			string packetText = "";
+			foreach (byte dataByte in ByteArray)
 			{
-				clients[SocketID].Close(10054);
-				return;
-			}
-			else if ((ResponsePacket.Length == 1) && (ResponsePacket[0] == 0xFF))
-			{
-				return;
+				packetText += ((char) dataByte).ToString();
 			}
 
-			clients[SocketID].SendPacket(ResponsePacket);
+			// Do something with it later.
 		}
 		void Program_OnDisconnect(int SocketID, SocketException Ex)
 		{

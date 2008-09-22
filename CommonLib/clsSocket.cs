@@ -111,7 +111,7 @@ namespace CommonLib
 		public delegate void __OnError(int SocketID, Exception Ex);
 		public event __OnError OnError;
 
-		public delegate void __OnDataArrival(int SocketID, byte[] ByteArray, string HexData);
+		public delegate void __OnDataArrival(int SocketID, byte[] ByteArray);
 		public event __OnDataArrival OnDataArrival;
 
 		#endregion
@@ -193,9 +193,8 @@ namespace CommonLib
 				}
 				byte[] bytes = new byte[l];
 				System.Buffer.BlockCopy(buffer, 0, bytes, 0, l);
-				string hex = EncryptLib.ByteArrayToHex(bytes);
 				StartReceive();
-				if (OnDataArrival != null) OnDataArrival(SockID, bytes, hex);
+				if (OnDataArrival != null) OnDataArrival(SockID, bytes);
 			}
 			catch (SocketException Ex)
 			{
