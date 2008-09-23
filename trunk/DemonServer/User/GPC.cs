@@ -27,7 +27,7 @@
 */
 namespace DemonServer.User
 {
-	enum GPC
+	public enum GPC
 	{
 		BANNED = -1,
 		GUEST = 0,
