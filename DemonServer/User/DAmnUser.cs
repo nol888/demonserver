@@ -100,16 +100,25 @@ namespace DemonServer.User
 		#endregion
 
 		#region Connection Functions
-		public int disconnect(string reason) {
+		public int disconnect(string reason) { return this.disconnect(reason, -1); }
+		public int disconnect(string reason, int socketID)
+		{
 			int connDisconnected = 0;
-			foreach (Socket sock in this._sockets)
+			lock (this._sockets)
 			{
-				Packet dAmnPacket = new Packet("disconnect", "");
-				dAmnPacket.args.Add("e", reason);
+				foreach (Socket sock in this._sockets)
+				{
+					if (socketID > 0)
+					{
+						if (sock.SocketID != socketID) continue;
+					}
+					Packet dAmnPacket = new Packet("disconnect", "");
+					dAmnPacket.args.Add("e", reason);
 
-				sock.SendPacket((string) dAmnPacket);
-				sock.Close();
-				connDisconnected++;
+					sock.SendPacket((string) dAmnPacket);
+					sock.Close();
+					connDisconnected++;
+				}
 			}
 			return connDisconnected;
 		}

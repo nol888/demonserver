@@ -32,19 +32,20 @@ using System.Linq;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 
 using DemonServer.Protocol;
 using DemonServer.User;
 
 namespace DemonServer
 {
-	class Program
+	class ServerCore
 	{
 		#region Dummy Constructor and Entry Point
-		public Program() { }
+		public ServerCore() { }
 		static void Main(string[] args)
 		{
-			Program mainProg = new Program();
+			ServerCore mainProg = new ServerCore();
 			Environment.Exit(mainProg.run(args));
 		}
 		#endregion
@@ -72,9 +73,11 @@ namespace DemonServer
 			System.Console.CancelKeyPress += delegate { this.cleanUp(); };
 
 			// Load config first.
-			DemonServer.XmlConfigReader configReader = new DemonServer.XmlConfigReader("config.xml");
+			XmlConfigReader configReader = new XmlConfigReader("config.xml");
 			this.Configuration = configReader.ReadConfig();
 			Console.TimestampFormat = this.Configuration["timestamp"];
+
+			Console.ShowInfo("Loaded configuration from 'config.xml'.");
 
 			// Init the socket list.
 			int i = maxConnections;
@@ -83,9 +86,44 @@ namespace DemonServer
 				unusedSockets.Push(i);
 			}
 
+			// Connect to the DB.
+			#region Connect to the DB.
+			DBConn = new Net.DBConn(Configuration["mysql-host"], Configuration["mysql-user"], Configuration["mysql-pass"],
+				Configuration["mysql-database"], ((Configuration["mysql-port"] != "") ? (int.Parse(Configuration["mysql-port"])) : (3306)));
+			lock (DBConn)
+			{
+				try
+				{
+					while (true)
+					{
+						Console.ShowInfo(string.Format("Attempting to connect to MySQL on '{0}:{1}'.", DBConn.sqlServer, DBConn.sqlPort));
+						if (DBConn.Connect() == false)
+						{
+							Console.ShowError("Unable to connect to MySQL server!  Error: " + DBConn.MySQL_Error());
+							System.Threading.Thread.Sleep(5000);
+						}
+						else
+						{
+							Console.ShowStatus("Successfully connected to MySQL.");
+							break;
+						}
+					}
+				}
+				catch (Exception)
+				{
+					Console.ShowError("Unable to connect to MySQL server!  Error: " + DBConn.MySQL_Error());
+				}
+			}
+			#endregion
+
 			// Start up the main socket.
 			this.listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			this.listenSocket.Bind(new IPEndPoint(IPAddress.Parse(this.Configuration["bind-ip"]), int.Parse(this.Configuration["bind-port"])));
+
+			// Start up the timers.
+			pingTimer.Elapsed += new System.Timers.ElapsedEventHandler(Socket_PingTimer);
+			errorTimer.Elapsed += new System.Timers.ElapsedEventHandler(Socket_ErrorCheck);
+			mySQLPingTimer.Elapsed += new System.Timers.ElapsedEventHandler(MySQLPingTimer_Elapsed);
 
 			// Run some packet parsing tests.
 			Packet pkt = new Packet("recv chat:Botdom\n\nmsg main\n\nLololo.");
@@ -101,6 +139,7 @@ namespace DemonServer
 
 			return 0;
 		}
+
 		void cleanUp()
 		{
 			this.Running = false;
@@ -125,33 +164,46 @@ namespace DemonServer
 		#region Client Connection Handling
 		public void clientConnected(IAsyncResult Result)
 		{
-			int SocketID = unusedSockets.Pop();
-			try
+			lock (this.listenSocket)
 			{
-				// Set up the event listeners.
-				socketList.Add(SocketID, null);
-				socketList[SocketID] = new Net.Socket(SocketID, listenSocket.EndAccept(Result));
-				socketList[SocketID].OnDataArrival += new Net.Socket.__OnDataArrival(Program_OnDataArrival);
-				socketList[SocketID].OnDisconnect += new Net.Socket.__OnDisconnect(Program_OnDisconnect);
-				socketList[SocketID].OnError += new Net.Socket.__OnError(Program_OnError);
+				try
+				{
+					int SocketID = unusedSockets.Pop();
 
-				// Start listening for the handshake.
-				socketList[SocketID].StartReceive();
+					// Set up the event listeners.
+					socketList.Add(SocketID, null);
+					socketList[SocketID] = new Net.Socket(SocketID, listenSocket.EndAccept(Result));
+					socketList[SocketID].OnDataArrival += new Net.Socket.__OnDataArrival(Program_OnDataArrival);
+					socketList[SocketID].OnDisconnect += new Net.Socket.__OnDisconnect(Program_OnDisconnect);
+					socketList[SocketID].OnError += new Net.Socket.__OnError(Program_OnError);
 
-				Console.ShowInfo(string.Format("New connection from \x1B[37m{0}\x1B[0m.", socketList[SocketID].Name));
-			}
-			catch (SocketException Ex)
-			{
-				Console.ShowError("Socket Exception: " + Ex.Message);
-			}
-			catch (Exception Ex)
-			{
-				Console.ShowError("Error accepting connection: " + Ex.Message);
-			}
-			finally
-			{
-				// Yea, let's stop hogging the main socket.
-				listenSocket.BeginAccept(__clientConnected, null);
+					// Start listening for the handshake.
+					socketList[SocketID].StartReceive();
+
+					Console.ShowInfo(string.Format("New connection from \x1B[37m{0}\x1B[0m.", socketList[SocketID].Name));
+				}
+				catch (InvalidOperationException)
+				{
+					// _Probably_ we ran out of sockets.
+					// Turn 'em down, sorry.
+					Console.ShowError("Error accepting connection - maximum limit of " + maxConnections.ToString() + " connections reached.");
+
+					listenSocket.EndAccept(Result).Close(1);
+					return;
+				}
+				catch (SocketException Ex)
+				{
+					Console.ShowError("Socket Exception: " + Ex.Message);
+				}
+				catch (Exception Ex)
+				{
+					Console.ShowError("Error accepting connection: " + Ex.Message);
+				}
+				finally
+				{
+					// Yea, let's stop hogging the main socket.
+					listenSocket.BeginAccept(__clientConnected, null);
+				}
 			}
 		}
 		void Program_OnDataArrival(int SocketID, byte[] ByteArray)
@@ -203,6 +255,86 @@ namespace DemonServer
 		void Program_OnError(int SocketID, Exception Ex)
 		{
 			Console.ShowError("An error occurred\n" + Ex.StackTrace + "\n" + Ex.Message);
+		}
+		#endregion
+
+		#region Timed Events
+		[MethodImpl(MethodImplOptions.Synchronized)]
+		void Socket_PingTimer(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			Packet pingPacket = new Packet("ping", "");
+
+			lock (this.clients)
+			{
+				foreach (DAmnUser user in this.clients)
+				{
+					if (user == null)
+					{
+						continue;
+					}
+					foreach (Net.Socket socket in user.sockets)
+					{
+						if (socket.IsPinging)
+						{
+							continue;
+						}
+
+						socket.IsPinging = true;
+						socket.PingTime = ServerCore.time();
+					}
+				}
+			}
+		}
+		[MethodImpl(MethodImplOptions.Synchronized)]
+		void Socket_ErrorCheck(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			lock (this.clients)
+			{
+				foreach (DAmnUser user in this.clients)
+				{
+					if (user == null)
+					{
+						continue;
+					}
+					foreach (Net.Socket socket in user.sockets)
+					{
+						if (!socket.IsPinging) continue;
+						if ((ServerCore.time() - socket.PingTime) >= 48)
+						{
+							socket.IsPinging = false;
+							user.disconnect("ping timeout", socket.SocketID);
+						}
+					}
+				}
+			}
+		}
+		[MethodImpl(MethodImplOptions.Synchronized)]
+		void MySQLPingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			try
+			{
+				lock (DBConn)
+				{
+					DBConn.Ping();
+				}
+				Console.ShowInfo("Pinging MySQL server to keep connection alive...");
+			}
+			catch (Exception) { }
+		}
+		#endregion
+
+		#region Misc
+		public static int time()
+		{
+			TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
+			int timestamp = (int) t.TotalSeconds;
+			return timestamp;
+		}
+		public static long microtime()
+		{
+			TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
+			long timestamp = (long) t.TotalMilliseconds;
+			return timestamp;
 		}
 		#endregion
 	}

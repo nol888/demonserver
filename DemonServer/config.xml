@@ -42,4 +42,17 @@
 		
 	-->
 	<bind ip="0.0.0.0" port="3900" />
+
+	<!--
+
+	MySQL Configuration information.
+	Pretty much explains itself.
+	
+	Host: Host to connect to.
+	Port: Leave out to use the default.
+	User: Username...
+	Pass: Password!
+	Database: Leave out to use the default.
+	-->
+	<mysql host="mysql.lonelypker.net" port="3066" user="simplymaple" pass="securepass123" database="msserver" />
 </configuration>
