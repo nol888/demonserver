@@ -33,6 +33,9 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
+using DemonServer.Protocol;
+using DemonServer.User;
+
 namespace DemonServer
 {
 	class Program
@@ -50,10 +53,11 @@ namespace DemonServer
 		private Socket listenSocket;
 
 		private AsyncCallback __clientConnected;
-		private CommonLib.DBConn DBConn;
+		private Net.DBConn DBConn;
 
-		private CommonLib.Socket[] clients = new CommonLib.Socket[maxConnections];
-		private Stack<int> unusedSockets = new Stack<int>(maxConnections);
+		private List<DAmnUser> clients = new List<DAmnUser>();
+		private Dictionary<int, Net.Socket> socketList = new Dictionary<int, Net.Socket>();
+		private Stack<int> unusedSockets = new Stack<int>();
 
 		private System.Timers.Timer pingTimer = new System.Timers.Timer(30000);
 		private System.Timers.Timer errorTimer = new System.Timers.Timer(10000);
@@ -65,11 +69,12 @@ namespace DemonServer
 		int run(string[] args)
 		{
 			__clientConnected = new AsyncCallback(this.clientConnected);
-			Console.CancelKeyPress += delegate { this.cleanUp(); };
+			System.Console.CancelKeyPress += delegate { this.cleanUp(); };
 
 			// Load config first.
-			CommonLib.XmlConfigReader configReader = new CommonLib.XmlConfigReader("config.xml");
+			DemonServer.XmlConfigReader configReader = new DemonServer.XmlConfigReader("config.xml");
 			this.Configuration = configReader.ReadConfig();
+			Console.TimestampFormat = this.Configuration["timestamp"];
 
 			// Init the socket list.
 			int i = maxConnections;
@@ -83,15 +88,15 @@ namespace DemonServer
 			this.listenSocket.Bind(new IPEndPoint(IPAddress.Parse(this.Configuration["bind-ip"]), int.Parse(this.Configuration["bind-port"])));
 
 			// Run some packet parsing tests.
-			CommonLib.Packet pkt = new CommonLib.Packet("recv chat:Botdom\n\nmsg main\n\nLololo.");
-			CommonLib.Packet pkt2 = new CommonLib.Packet("kick chat:chatroom\nu=username\n\nReason lol.");
-			CommonLib.Packet pkt3 = new CommonLib.Packet("kick", "chat:chatroom");
-			CommonLib.Packet pkt4 = new CommonLib.Packet();
+			Packet pkt = new Packet("recv chat:Botdom\n\nmsg main\n\nLololo.");
+			Packet pkt2 = new Packet("kick chat:chatroom\nu=username\n\nReason lol.");
+			Packet pkt3 = new Packet("kick", "chat:chatroom");
+			Packet pkt4 = new Packet();
 			pkt4.cmd = "send";
 			pkt4.param = "chat:Botdom";
 			pkt4.body = "ban Loluser";
 			pkt4.args.Add("fake", "arg");
-			CommonLib.Packet pkt5 = (CommonLib.Packet) pkt4.ToString();
+			Packet pkt5 = (Packet) pkt4.ToString();
 			string pkt6 = (string) pkt5;
 
 			return 0;
@@ -107,14 +112,11 @@ namespace DemonServer
 				errorTimer.Stop();
 				mySQLPingTimer.Stop();
 
-				// Disconnect all users.
-				foreach (CommonLib.Socket CurrentClient in clients)
+				// Disconnect all sockets.
+				foreach (DAmnUser CurrentClient in clients)
 				{
-					if ((CurrentClient == null) || !(CurrentClient.InternalSocket.Connected))
-					{
-						continue;
-					}
-					CurrentClient.Close(10053);
+					if (CurrentClient == null) continue;
+					CurrentClient.disconnect("shutdown");
 				}
 			}
 			catch { }
@@ -127,23 +129,24 @@ namespace DemonServer
 			try
 			{
 				// Set up the event listeners.
-				clients[SocketID] = new CommonLib.Socket(SocketID, listenSocket.EndAccept(Result));
-				clients[SocketID].OnDataArrival += new CommonLib.Socket.__OnDataArrival(Program_OnDataArrival);
-				clients[SocketID].OnDisconnect += new CommonLib.Socket.__OnDisconnect(Program_OnDisconnect);
-				clients[SocketID].OnError += new CommonLib.Socket.__OnError(Program_OnError);
+				socketList.Add(SocketID, null);
+				socketList[SocketID] = new Net.Socket(SocketID, listenSocket.EndAccept(Result));
+				socketList[SocketID].OnDataArrival += new Net.Socket.__OnDataArrival(Program_OnDataArrival);
+				socketList[SocketID].OnDisconnect += new Net.Socket.__OnDisconnect(Program_OnDisconnect);
+				socketList[SocketID].OnError += new Net.Socket.__OnError(Program_OnError);
 
 				// Start listening for the handshake.
-				clients[SocketID].StartReceive();
+				socketList[SocketID].StartReceive();
 
-				CommonLib.Console.ShowInfo(string.Format("New connection from \x1B[37m{0}\x1B[0m.", clients[SocketID].Name));
+				Console.ShowInfo(string.Format("New connection from \x1B[37m{0}\x1B[0m.", socketList[SocketID].Name));
 			}
 			catch (SocketException Ex)
 			{
-				CommonLib.Console.ShowError("Socket Exception: " + Ex.Message);
+				Console.ShowError("Socket Exception: " + Ex.Message);
 			}
 			catch (Exception Ex)
 			{
-				CommonLib.Console.ShowError("Error accepting connection: " + Ex.Message);
+				Console.ShowError("Error accepting connection: " + Ex.Message);
 			}
 			finally
 			{
@@ -187,11 +190,11 @@ namespace DemonServer
 							ExceptionName = Ex.Message;
 							break;
 					}
-					CommonLib.Console.ShowInfo("\x1B[37m" + clients[SocketID].Name + "\x1B[0m disconnected: " + ExceptionName);
+					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected: " + ExceptionName);
 				}
 				else
 				{
-					CommonLib.Console.ShowInfo("\x1B[37m" + clients[SocketID].Name + "\x1B[0m disconnected: Connection closed.");
+					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected: Connection closed.");
 				}
 				clients[SocketID] = null;
 				unusedSockets.Push(SocketID);
@@ -199,7 +202,7 @@ namespace DemonServer
 		}
 		void Program_OnError(int SocketID, Exception Ex)
 		{
-			CommonLib.Console.ShowError("An error occurred\n" + Ex.StackTrace + "\n" + Ex.Message);
+			Console.ShowError("An error occurred\n" + Ex.StackTrace + "\n" + Ex.Message);
 		}
 		#endregion
 	}

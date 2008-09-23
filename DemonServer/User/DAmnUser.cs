@@ -30,12 +30,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using DemonServer.Protocol;
+using DemonServer.Net;
+
 namespace DemonServer.User
 {
-	class DAmnUser
+	public class DAmnUser
 	{
 		#region Private Properties
-		private List<CommonLib.Socket> _sockets;
+		private List<Socket> _sockets;
 
 		private int _userid;
 
@@ -44,6 +47,72 @@ namespace DemonServer.User
 		private string _realName;
 
 		private GPC _gpc;
+
+		private bool _authed;
+		#endregion
+
+		#region Public Properties
+		public List<Socket> sockets
+		{
+			get { return this._sockets; }
+			set { this._sockets = value; }
+		}
+
+		public int userID
+		{
+			get { return this._userid; }
+			//set { this._userid = value; }
+		}
+
+		public string username
+		{
+			get { return _username; }
+			//set { _username = value; }
+		}
+		public string artistType
+		{
+			get { return _artistType; }
+			set { _artistType = value; }
+		}
+		public string realName
+		{
+			get { return _realName; }
+			set { _realName = value; }
+		}
+
+		public GPC gpc
+		{
+			get { return this._gpc; }
+			set { this._gpc = value; }
+		}
+
+		public bool authed
+		{
+			get { return this._authed; }
+			//set { this._authed = value; }
+		}
+		#endregion
+
+		#region Constructor
+		public DAmnUser()
+		{
+		}
+		#endregion
+
+		#region Connection Functions
+		public int disconnect(string reason) {
+			int connDisconnected = 0;
+			foreach (Socket sock in this._sockets)
+			{
+				Packet dAmnPacket = new Packet("disconnect", "");
+				dAmnPacket.args.Add("e", reason);
+
+				sock.SendPacket((string) dAmnPacket);
+				sock.Close();
+				connDisconnected++;
+			}
+			return connDisconnected;
+		}
 		#endregion
 	}
 }
