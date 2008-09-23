@@ -8,7 +8,7 @@
     <ProjectGuid>{18B4F59F-E40B-4B44-AECA-CAEC502BED81}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CommonLib</RootNamespace>
+    <RootNamespace>DemonServer</RootNamespace>
     <AssemblyName>CommonLib</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -49,15 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="clsConsole.cs" />
-    <Compile Include="clsODBC.cs" />
-    <Compile Include="clsPacket.cs" />
-    <Compile Include="clsSocket.cs" />
-    <Compile Include="clsXmlConfigReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="MySql.Data.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

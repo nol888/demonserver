@@ -33,7 +33,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.ComponentModel;
 
-namespace CommonLib
+using DemonServer.User;
+
+namespace DemonServer.Net
 {
 	public class Socket
 	{
@@ -45,11 +47,13 @@ namespace CommonLib
 		private int SockID;
 		private byte[] buffer = new byte[2048];
 
-		private string AuthedName = "";
-		private int AuthedID = 0;
-
 		private bool _IsPinging = false;
 		private int _PingTime = 0;
+
+		private DAmnUser _userRef;
+
+		private DateTime _timeConnected;
+		private DateTime _lastData;
 		#endregion
 
 		#region Public Properties
@@ -57,6 +61,14 @@ namespace CommonLib
 		{
 			get { return _InternalSocket; }
 			set { _InternalSocket = value; }
+		}
+
+		public string Name
+		{
+			get
+			{
+				return this.InternalSocket.RemoteEndPoint.ToString();
+			}
 		}
 
 		public int PingTime
@@ -70,36 +82,36 @@ namespace CommonLib
 			set { _IsPinging = value; }
 		}
 
-		public string Name
-		{
-			get
-			{
-				if (this.AuthedName != "") { return this.AuthedName; }
-				else { return this.InternalSocket.RemoteEndPoint.ToString(); }
-			}
-			set
-			{
-				if (this.AuthedName != "") { return; }
-				else { this.AuthedName = value; }
-			}
-		}
-		public int ClientID
-		{
-			get
-			{
-				return this.AuthedID;
-			}
-			set
-			{
-				if (this.AuthedID > 0) { return; }
-				else { this.AuthedID = value; }
-			}
-		}
 		public int SocketID
 		{
 			get
 			{
 				return this.SockID;
+			}
+		}
+
+		public int SecondsSinceConnected
+		{
+			get
+			{
+				TimeSpan timeSinceConnected = DateTime.Now - this._timeConnected;
+				return (int) Math.Round(timeSinceConnected.TotalSeconds);
+			}
+		}
+		public int SecondsSinceLast
+		{
+			get
+			{
+				TimeSpan timeSinceLast = DateTime.Now - this._lastData;
+				return (int) Math.Round(timeSinceLast.TotalSeconds);
+			}
+		}
+
+		public DAmnUser UserRef
+		{
+			get
+			{
+				return this._userRef;
 			}
 		}
 		#endregion
@@ -176,6 +188,29 @@ namespace CommonLib
 				if (OnDisconnect != null) OnDisconnect(SockID, Ex);
 				return -1;
 			}
+		}
+		public int SendPacket(string PacketString)
+		{
+			if (PacketString.Length == 0) return 0;
+			if (this._InternalSocket.Connected == false) return -1;
+
+			byte[] stringBytes = new byte[PacketString.Length];
+			// Hackhack.
+			for (int i = 0; i < (PacketString.Length - 1); i++)
+			{
+				if (PacketString[i] > 255)
+				{
+					// Should never happen...but...
+					throw new ArgumentException("PacketString");
+				}
+				stringBytes[i] = (byte) PacketString[i];
+			}
+
+			return this.SendPacket(stringBytes);
+		}
+		public int SendPacket(DemonServer.Protocol.Packet Packet)
+		{
+			return this.SendPacket(Packet.ToString());
 		}
 		#endregion
 
