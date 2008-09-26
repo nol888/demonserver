@@ -49,6 +49,8 @@
   <ItemGroup>
     <Compile Include="Console.cs" />
     <Compile Include="Net\ODBC.cs" />
+    <Compile Include="DAmnRoom.cs" />
+    <Compile Include="UserManageDaemon.cs" />
     <Compile Include="XmlConfigReader.cs" />
     <Compile Include="Protocol\Packet.cs" />
     <Compile Include="Handler\IPacketHandler.cs" />
