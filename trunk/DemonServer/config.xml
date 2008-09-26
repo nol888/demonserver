@@ -42,6 +42,23 @@
 		
 	-->
 	<bind ip="0.0.0.0" port="3900" />
+	
+	<!--
+
+		The IP and port to bind to for authtoken and user creation.  If unsure, use 0.0.0.0 and port 3901
+		to listen to all IP's.
+		
+	-->
+	<bind-auc ip="0.0.0.0" port="3901" />
+
+	<!--
+
+		The maximum amount of users that can be connected to the server at one time.
+		
+		Seperate values for the authtoken and user creation daemon, and the main server.
+		
+	-->
+	<connlimit main="200" auc="30" />
 
 	<!--
 
@@ -54,5 +71,5 @@
 	Pass: Password!
 	Database: Leave out to use the default.
 	-->
-	<mysql host="mysql.lonelypker.net" port="3066" user="simplymaple" pass="securepass123" database="msserver" />
+	<mysql host="192.168.1.150" port="3066" user="demonserver" pass="pwMdZhFTUUG7ZWCJ" database="demonserver" />
 </configuration>

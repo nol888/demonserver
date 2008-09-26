@@ -49,7 +49,7 @@ namespace DemonServer
 			Environment.Exit(mainProg.run(args));
 		}
 		#endregion
-		private const int maxConnections = 200;
+		private int maxConnections;
 
 		private Socket listenSocket;
 
@@ -76,6 +76,7 @@ namespace DemonServer
 			XmlConfigReader configReader = new XmlConfigReader("config.xml");
 			this.Configuration = configReader.ReadConfig();
 			Console.TimestampFormat = this.Configuration["timestamp"];
+			this.maxConnections = int.Parse(this.Configuration["connlimit-main"]);
 
 			Console.ShowInfo("Loaded configuration from 'config.xml'.");
 
