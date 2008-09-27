@@ -253,8 +253,8 @@ namespace DemonServer
 									response.param = "";
 									response.args.Add("e", "failed");
 
-									socketList[SocketID].SendPacket(response);
-									socketList[SocketID].Close(10054);
+									socketList[item.socketID].SendPacket(response);
+									socketList[item.socketID].Close(10054);
 									return;
 								}
 								if (!item.dataPacket.args.ContainsKey("password"))
@@ -264,8 +264,8 @@ namespace DemonServer
 									response.param = "";
 									response.args.Add("e", "failed");
 
-									socketList[SocketID].SendPacket(response);
-									socketList[SocketID].Close(10054);
+									socketList[item.socketID].SendPacket(response);
+									socketList[item.socketID].Close(10054);
 									return;
 								}
 								string password = item.dataPacket.args["password"];

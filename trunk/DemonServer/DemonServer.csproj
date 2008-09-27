@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Console.cs" />
+    <Compile Include="Crypto.cs" />
     <Compile Include="Net\ODBC.cs" />
     <Compile Include="DAmnRoom.cs" />
     <Compile Include="UserManageDaemon.cs" />
