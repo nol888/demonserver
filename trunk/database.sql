@@ -1,37 +1,9 @@
-/*
-+---------------------------------------------------------------------------+
-|	Demon - dAmn Emulator													|
-|===========================================================================|
-|	Copyright © 2008 Nol888													|
-|===========================================================================|
-|	This file is part of Demon.												|
-|																			|
-|	Demon is free software: you can redistribute it and/or modify			|
-|	it under the terms of the GNU Affero General Public License as			|
-|	published by the Free Software Foundation, either version 3 of the		|
-|	License, or (at your option) any later version.							|
-|																			|
-|	This program is distributed in the hope that it will be useful,			|
-|	but WITHOUT ANY WARRANTY; without even the implied warranty of			|
-|	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the			|
-|	GNU Affero General Public License for more details.						|
-|																			|
-|	You should have received a copy of the GNU Affero General Public License|
-|	along with this program.  If not, see <http://www.gnu.org/licenses/>.	|
-|																			|
-|===========================================================================|
-|	> $Date$
-|	> $Revision$
-|	> $Author$
-+---------------------------------------------------------------------------+
-*/
-
 -- phpMyAdmin SQL Dump
 -- version 3.1.0-dev
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Sep 25, 2008 at 08:18 PM
+-- Generation Time: Sep 27, 2008 at 11:04 AM
 -- Server version: 5.1.22
 -- PHP Version: 5.2.6
 
@@ -64,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `chatrooms` (
   PRIMARY KEY (`chatroom_id`),
   UNIQUE KEY `chatroom_name` (`chatroom_name`),
   KEY `roomcreatorid` (`chatroom_creator_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;
 
 -- --------------------------------------------------------
 
@@ -77,13 +49,13 @@ CREATE TABLE IF NOT EXISTS `privclasses` (
   `privclass_id` int(8) unsigned NOT NULL COMMENT 'The ID of the privclass.',
   `privclass_name` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'The name of the privclass.',
   `order` smallint(2) unsigned NOT NULL COMMENT 'The chatroom order of the privclass.',
-  `admin` bit(1) NOT NULL DEFAULT '\0' COMMENT 'Admin privs?',
-  `kick` bit(1) NOT NULL DEFAULT '\0' COMMENT 'Kick privs?',
-  `join` bit(1) NOT NULL DEFAULT '' COMMENT 'Join privs?',
-  `msg` bit(1) NOT NULL DEFAULT '' COMMENT 'Message privs?',
-  `topic` bit(1) NOT NULL DEFAULT '\0' COMMENT 'Topic privs?',
-  `title` bit(1) NOT NULL DEFAULT '\0' COMMENT 'Title privs?',
-  `shownotice` bit(1) NOT NULL DEFAULT '' COMMENT 'Show notices apon join/part?',
+  `admin` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Admin privs?',
+  `kick` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Kick privs?',
+  `join` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Join privs?',
+  `msg` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Message privs?',
+  `topic` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Topic privs?',
+  `title` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Title privs?',
+  `shownotice` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Show notices apon join/part?',
   `promote` smallint(2) unsigned NOT NULL DEFAULT '0' COMMENT 'Promote privs.',
   `demote` smallint(2) unsigned NOT NULL DEFAULT '0' COMMENT 'Demote privs.',
   `images` mediumint(3) NOT NULL DEFAULT '0' COMMENT 'Image privs. -1 for unlimited, 0 for none, [number] max.',
@@ -93,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `privclasses` (
   `avatars` mediumint(3) NOT NULL DEFAULT '0' COMMENT 'Avatar privs. -1 for unlimited, 0 for none, [number] max.',
   `websites` mediumint(3) NOT NULL DEFAULT '0' COMMENT 'Website privs. -1 for unlimited, 0 for none, [number] max.',
   `objects` mediumint(3) NOT NULL DEFAULT '0' COMMENT 'Object privs. -1 for unlimited, 0 for none, [number] max.',
-  `default` bit(1) NOT NULL DEFAULT '\0' COMMENT 'Default Privclass?',
+  `default` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Default Privclass?',
   PRIMARY KEY (`privclass_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Privclass definition table.';
 
@@ -110,9 +82,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password_hash` char(128) COLLATE utf8_bin NOT NULL COMMENT 'SHA-512 hash represented as a hexidecimal string.',
   `password_salt` char(6) COLLATE utf8_bin NOT NULL COMMENT 'Password salt.',
   `authtoken` char(32) COLLATE utf8_bin NOT NULL COMMENT 'The user''s current authtoken.',
+  `gpc` tinyint(1) NOT NULL COMMENT 'The GPC of the user.  -1 is banned, 0 is guest, 1 is admin.',
+  `user_realname` varchar(100) COLLATE utf8_bin NOT NULL DEFAULT '' COMMENT 'The "real name" of the user.',
+  `user_dtype` varchar(100) COLLATE utf8_bin NOT NULL DEFAULT 'Deviously Deviant' COMMENT 'The deviant type of the deviant.',
+  `user_symbol` char(1) COLLATE utf8_bin NOT NULL DEFAULT '~' COMMENT 'The usersymbol of the deviant.',
   PRIMARY KEY (`user_id`),
-  KEY `user_name` (`user_name`,`user_id`,`authtoken`,`password_hash`,`password_salt`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=2 ;
+  UNIQUE KEY `user_name_2` (`user_name`),
+  KEY `user_name` (`user_name`,`user_id`,`authtoken`,`password_hash`,`password_salt`),
+  KEY `id_lookup` (`user_id`,`gpc`,`user_realname`,`user_dtype`,`user_symbol`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;
 
 --
 -- Constraints for dumped tables
