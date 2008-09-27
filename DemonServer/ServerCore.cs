@@ -138,6 +138,8 @@ namespace DemonServer
 			Packet pkt5 = (Packet) pkt4.ToString();
 			string pkt6 = (string) pkt5;
 
+			string hash = Crypto.hash("12345", "salt12");
+
 			return 0;
 		}
 
