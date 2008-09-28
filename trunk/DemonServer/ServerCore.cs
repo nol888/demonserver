@@ -126,20 +126,11 @@ namespace DemonServer
 			errorTimer.Elapsed += new System.Timers.ElapsedEventHandler(Socket_ErrorCheck);
 			mySQLPingTimer.Elapsed += new System.Timers.ElapsedEventHandler(MySQLPingTimer_Elapsed);
 
-			// Run some packet parsing tests.
-			Packet pkt = new Packet("recv chat:Botdom\n\nmsg main\n\nLololo.");
-			Packet pkt2 = new Packet("kick chat:chatroom\nu=username\n\nReason lol.");
-			Packet pkt3 = new Packet("kick", "chat:chatroom");
-			Packet pkt4 = new Packet();
-			pkt4.cmd = "send";
-			pkt4.param = "chat:Botdom";
-			pkt4.body = "ban Loluser";
-			pkt4.args.Add("fake", "arg");
-			Packet pkt5 = (Packet) pkt4.ToString();
-			string pkt6 = (string) pkt5;
-
 			string hash = Crypto.hash("12345", "salt12");
-
+			string salt1 = Crypto.genSalt();
+			string salt2 = Crypto.genSalt();
+			string pk1 = Crypto.genAuthToken();
+			string pk2 = Crypto.genAuthToken();
 			return 0;
 		}
 
