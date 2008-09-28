@@ -80,7 +80,7 @@ namespace DemonServer.Protocol
 
 			while (true)
 			{
-				if ((nextLines.Length == 0) || (nextLines[0] == '\n')) break;
+				if ((nextLines.Length == 0) || (nextLines[0] == '\n') || (nextLines[0] == '\0')) break;
 
 				lineLength = nextLines.IndexOf('\n');
 				valuePos = nextLines.IndexOf('=');
@@ -91,7 +91,7 @@ namespace DemonServer.Protocol
 				nextLines = nextLines.Substring(lineLength + 1);
 			}
 
-			if (data != null && data.Length > 0) this.body = nextLines.Substring(1);
+			if ((nextLines != null) && (nextLines.Length > 0) && (nextLines[0] != '\0')) this.body = nextLines.Substring(1);
 			else this.body = "";
 		}
 		#endregion

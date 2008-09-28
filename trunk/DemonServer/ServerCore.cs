@@ -64,6 +64,8 @@ namespace DemonServer
 		private System.Timers.Timer errorTimer = new System.Timers.Timer(10000);
 		private System.Timers.Timer mySQLPingTimer = new System.Timers.Timer(300000);
 
+		private UserManageDaemon umd;
+
 		private Dictionary<string, string> Configuration;
 
 		public bool Running = true;
@@ -126,11 +128,13 @@ namespace DemonServer
 			errorTimer.Elapsed += new System.Timers.ElapsedEventHandler(Socket_ErrorCheck);
 			mySQLPingTimer.Elapsed += new System.Timers.ElapsedEventHandler(MySQLPingTimer_Elapsed);
 
-			string hash = Crypto.hash("12345", "salt12");
-			string salt1 = Crypto.genSalt();
-			string salt2 = Crypto.genSalt();
-			string pk1 = Crypto.genAuthToken();
-			string pk2 = Crypto.genAuthToken();
+			// Start up the user manager.
+			umd = new UserManageDaemon(this.Configuration);
+
+			while (true)
+			{
+				System.Threading.Thread.Sleep(100);
+			}
 			return 0;
 		}
 

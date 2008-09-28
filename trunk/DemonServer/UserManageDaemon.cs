@@ -111,6 +111,10 @@ namespace DemonServer
 			// Set up the packet queue.
 			authQueue = new Queue<QueueItem>();
 
+			// Set up processor thread.
+			workerThread = new Thread(new ThreadStart(this.queueProcessor));
+			workerThread.Start();
+
 			// Start listening.
 			listenSocket.Listen(4);
 			listenSocket.BeginAccept(this.__clientConnected, null);
@@ -248,7 +252,7 @@ namespace DemonServer
 								string username = item.dataPacket.param;
 								if (username == "")
 								{
-									// ...whoops.
+									#region Lol...whoops.
 									response.cmd = "create";
 									response.param = "";
 									response.args.Add("e", "failed");
@@ -256,9 +260,38 @@ namespace DemonServer
 									socketList[item.socketID].SendPacket(response);
 									socketList[item.socketID].Close(10054);
 									return;
+									#endregion
 								}
 								if (!item.dataPacket.args.ContainsKey("password"))
 								{
+									#region Lol...whoops.
+									response.cmd = "create";
+									response.param = "";
+									response.args.Add("e", "failed");
+
+									socketList[item.socketID].SendPacket(response);
+									socketList[item.socketID].Close(10054);
+									return;
+									#endregion
+								}
+								string password = item.dataPacket.args["password"];
+
+								// Input - Check
+								// Hashes - Not check
+								string passSalt = Crypto.genSalt();
+								string passHash = Crypto.hash(password, passSalt);
+								string pK = Crypto.genAuthToken();
+
+								string query = "INSERT INTO `users` ( `user_name`, `password_hash`, `password_salt`, `authtoken`, `user_realname` ) VALUES";
+								query += String.Format("('{0}', '{1}', '{2}', '{3}', '{0}');", username, passHash, passSalt, pK);
+
+								this.DBConn.Query(query);
+
+								if (this.DBConn.MySQL_Error(true) != "")
+								{
+									// Oh noes!
+									Console.ShowWarning("Error creating a new user - " + this.DBConn.MySQL_Error());
+
 									// ...whoops.
 									response.cmd = "create";
 									response.param = "";
@@ -268,11 +301,16 @@ namespace DemonServer
 									socketList[item.socketID].Close(10054);
 									return;
 								}
-								string password = item.dataPacket.args["password"];
+								else
+								{
+									response.cmd = "create";
+									response.param = "";
+									response.args.Add("e", "ok");
 
-								string query = "";
+									socketList[item.socketID].SendPacket(response);
+									socketList[item.socketID].Close(0);
+								}
 
-								// XXX - TODO: Finish this!
 								break;
 
 						}
