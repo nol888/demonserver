@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Sep 27, 2008 at 11:04 AM
+-- Generation Time: Sep 28, 2008 at 11:12 AM
 -- Server version: 5.1.22
 -- PHP Version: 5.2.6
 
@@ -29,14 +29,16 @@ CREATE TABLE IF NOT EXISTS `chatrooms` (
   `chatroom_id` int(6) unsigned NOT NULL AUTO_INCREMENT COMMENT 'The ID of the chatroom.',
   `chatroom_creator_id` int(6) unsigned NOT NULL COMMENT 'The ID of the creator of the chatroom.',
   `chatroom_name` varchar(30) COLLATE utf8_bin NOT NULL COMMENT 'The name of the chatroom.',
-  `chatroom_title` longtext COLLATE utf8_bin NOT NULL COMMENT 'The current title of the chatroom.',
-  `chatroom_topic` longtext COLLATE utf8_bin NOT NULL COMMENT 'The current topic of the chatroom.',
+  `chatroom_title` int(6) unsigned NOT NULL COMMENT 'The current title of the chatroom.',
+  `chatroom_topic` int(6) unsigned NOT NULL COMMENT 'The current topic of the chatroom.',
   `privclass_collection` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'The comma seperated list of privclasses in the chatroom.',
   `room_privs` int(3) unsigned NOT NULL DEFAULT '127' COMMENT 'The combined flag that stores the global privs of the room.  See DemonServer.DAmnRoom.Privs for more info.',
   PRIMARY KEY (`chatroom_id`),
   UNIQUE KEY `chatroom_name` (`chatroom_name`),
-  KEY `roomcreatorid` (`chatroom_creator_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;
+  KEY `roomcreatorid` (`chatroom_creator_id`),
+  KEY `chatroomtitleref` (`chatroom_title`),
+  KEY `chatroomtopicref` (`chatroom_topic`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin ROW_FORMAT=COMPACT AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -46,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `chatrooms` (
 
 DROP TABLE IF EXISTS `privclasses`;
 CREATE TABLE IF NOT EXISTS `privclasses` (
-  `privclass_id` int(8) unsigned NOT NULL COMMENT 'The ID of the privclass.',
+  `privclass_id` int(8) unsigned NOT NULL AUTO_INCREMENT COMMENT 'The ID of the privclass.',
   `privclass_name` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'The name of the privclass.',
   `order` smallint(2) unsigned NOT NULL COMMENT 'The chatroom order of the privclass.',
   `admin` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Admin privs?',
@@ -67,7 +69,23 @@ CREATE TABLE IF NOT EXISTS `privclasses` (
   `objects` mediumint(3) NOT NULL DEFAULT '0' COMMENT 'Object privs. -1 for unlimited, 0 for none, [number] max.',
   `default` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Default Privclass?',
   PRIMARY KEY (`privclass_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Privclass definition table.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Privclass definition table.' AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `topictitles`
+--
+
+DROP TABLE IF EXISTS `topictitles`;
+CREATE TABLE IF NOT EXISTS `topictitles` (
+  `id` int(6) unsigned NOT NULL AUTO_INCREMENT COMMENT 'The ID of the topic/title.',
+  `text` longtext COLLATE utf8_bin NOT NULL COMMENT 'Main body content.',
+  `user_set` int(6) unsigned NOT NULL COMMENT 'User ID of the settor.',
+  `time_set` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Time the topic/title was set.',
+  PRIMARY KEY (`id`),
+  KEY `usersetref` (`user_set`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Holds the topics/titles used in the chatroom.' AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -90,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `user_name_2` (`user_name`),
   KEY `user_name` (`user_name`,`user_id`,`authtoken`,`password_hash`,`password_salt`),
   KEY `id_lookup` (`user_id`,`gpc`,`user_realname`,`user_dtype`,`user_symbol`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin ROW_FORMAT=COMPACT AUTO_INCREMENT=4 ;
 
 --
 -- Constraints for dumped tables
@@ -100,7 +118,15 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Constraints for table `chatrooms`
 --
 ALTER TABLE `chatrooms`
+  ADD CONSTRAINT `chatroomtopicref` FOREIGN KEY (`chatroom_topic`) REFERENCES `topictitles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `chatroomtitleref` FOREIGN KEY (`chatroom_title`) REFERENCES `topictitles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `roomcreatorid` FOREIGN KEY (`chatroom_creator_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `topictitles`
+--
+ALTER TABLE `topictitles`
+  ADD CONSTRAINT `usersetref` FOREIGN KEY (`user_set`) REFERENCES `users` (`user_id`) ON UPDATE CASCADE;
 
 SET FOREIGN_KEY_CHECKS=1;
 

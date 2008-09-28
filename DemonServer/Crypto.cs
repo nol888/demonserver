@@ -74,7 +74,62 @@ namespace DemonServer
 
 		public static string genSalt()
 		{
-			return "salt12";
+			double random1 = 0.0;
+			byte[] random2 = new byte[10];
+			int random3 = 0;
+			string random4 = "";
+			long random5 = 0L;
+
+			random1 = Crypto.prng.NextDouble();
+			Crypto.prng.NextBytes(random2);
+			random3 = Crypto.prng.Next((int) Math.Round(random1 * 10), (int)Math.Round(random1 * 100));
+			random4 = random1.ToString() + random3.ToString() + random2[1].ToString();
+			random5 = (long) Math.Round((random1 + (double) random2[4] + (double) random3) * random1) * 1234;
+
+			System.Text.UnicodeEncoding str = new UnicodeEncoding();
+			string hashInput = random1.ToString() + random3.ToString() + random4 + random5.ToString();
+			byte[] hashInputBytes = str.GetBytes(hashInput);
+			byte[] hashOutput = Crypto.shaProvider.ComputeHash(Crypto.md5Provider.ComputeHash(hashInputBytes));
+			string hashStr = "";
+			foreach (byte hexByte in hashOutput)
+			{
+				hashStr += hexByte.ToString("X2");
+			}
+
+			string output = "";
+			for (int i = 0; i < 6; i++)
+			{
+				output += hashStr[Crypto.prng.Next(0, hashStr.Length)];
+			}
+
+			return output;
+		}
+
+		public static string genAuthToken()
+		{
+			double random1 = 0.0;
+			byte[] random2 = new byte[10];
+			int random3 = 0;
+			string random4 = "";
+			long random5 = 0L;
+
+			random1 = Crypto.prng.NextDouble();
+			Crypto.prng.NextBytes(random2);
+			random3 = Crypto.prng.Next((int) Math.Round(random1 * 10), (int) Math.Round(random1 * 100));
+			random4 = random1.ToString() + random3.ToString() + random2[1].ToString();
+			random5 = (long) Math.Round((random1 + (double) random2[4] + (double) random3) * random1) * 1234;
+
+			System.Text.UnicodeEncoding str = new UnicodeEncoding();
+			string hashInput = random1.ToString() + random3.ToString() + random4 + random5.ToString();
+			byte[] hashInputBytes = str.GetBytes(hashInput);
+			byte[] hashOutput = Crypto.md5Provider.ComputeHash(hashInputBytes);
+			string hashStr = "";
+			foreach (byte hexByte in hashOutput)
+			{
+				hashStr += hexByte.ToString("X2");
+			}
+
+			return hashStr;
 		}
 		#endregion
 	}
