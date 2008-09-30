@@ -216,8 +216,8 @@ namespace DemonServer
 		}
 		void Program_OnDisconnect(int SocketID, SocketException Ex)
 		{
-			if (clients[SocketID] == null) return;
-			lock (this.clients[SocketID])
+			if (!socketList.ContainsKey(SocketID)) return;
+			lock (this.socketList[SocketID])
 			{
 				if (Ex.ErrorCode > 0)
 				{
@@ -246,7 +246,8 @@ namespace DemonServer
 				{
 					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected: Connection closed.");
 				}
-				clients[SocketID] = null;
+				socketList[SocketID] = null;
+				socketList.Remove(SocketID);
 				unusedSockets.Push(SocketID);
 			}
 		}

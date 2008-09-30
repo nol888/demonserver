@@ -26,6 +26,7 @@
 +---------------------------------------------------------------------------+
 */
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -190,11 +191,28 @@ namespace DemonServer
 			item.dataPacket = dataPacket;
 			item.socketID = SocketID;
 
-			authQueue.Enqueue(item);
+			lock (this.authQueue)
+			{
+				authQueue.Enqueue(item);
+			}
+
+			// Check to make sure someone's on the other end...that could be bad otherwise.
+			if (workerThread.ThreadState != ThreadState.Running)
+			{
+				try
+				{
+					workerThread.Abort();
+				}
+				catch (Exception)
+				{
+				}
+				workerThread = new Thread(new ThreadStart(this.queueProcessor));
+				workerThread.Start();
+			}
 		}
 		void UserManageDaemon_OnDisconnect(int SocketID, SocketException Ex)
 		{
-			if (socketList[SocketID] == null) return;
+			if (!socketList.ContainsKey(SocketID)) return;
 			lock (this.socketList[SocketID])
 			{
 				if (Ex.ErrorCode > 0)
@@ -218,13 +236,16 @@ namespace DemonServer
 							ExceptionName = Ex.Message;
 							break;
 					}
+					if (!socketList.ContainsKey(SocketID)) return;
 					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected: " + ExceptionName);
 				}
 				else
 				{
+					if (!socketList.ContainsKey(SocketID)) return;
 					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected: Connection closed.");
 				}
 				socketList[SocketID] = null;
+				socketList.Remove(SocketID);
 				unusedSocketList.Push(SocketID);
 			}
 		}
@@ -243,76 +264,178 @@ namespace DemonServer
 				{
 					while (this.authQueue.Count > 0)
 					{
-						QueueItem item = this.authQueue.Dequeue();
-						Packet response = new Packet();
-
-						switch (item.dataPacket.cmd.ToLower())
+						lock (this.authQueue)
 						{
-							case "create":
-								string username = item.dataPacket.param;
-								if (username == "")
-								{
-									#region Lol...whoops.
-									response.cmd = "create";
-									response.param = "";
-									response.args.Add("e", "failed");
+							QueueItem item = this.authQueue.Dequeue();
+							Packet response = new Packet();
 
-									socketList[item.socketID].SendPacket(response);
-									socketList[item.socketID].Close(10054);
-									return;
-									#endregion
-								}
-								if (!item.dataPacket.args.ContainsKey("password"))
-								{
-									#region Lol...whoops.
-									response.cmd = "create";
-									response.param = "";
-									response.args.Add("e", "failed");
+							switch (item.dataPacket.cmd.ToLower())
+							{
+								#region Create packet
+								case "create":
+									string username = item.dataPacket.param;
+									if (username == "")
+									{
+										#region Lol...whoops.
+										response.cmd = "create";
+										response.param = "";
+										response.args.Add("e", "failed");
 
-									socketList[item.socketID].SendPacket(response);
-									socketList[item.socketID].Close(10054);
-									return;
-									#endregion
-								}
-								string password = item.dataPacket.args["password"];
+										socketList[item.socketID].SendPacket(response);
+										socketList[item.socketID].Close(10054);
+										return;
+										#endregion
+									}
+									if (!item.dataPacket.args.ContainsKey("password"))
+									{
+										#region Lol...whoops.
+										response.cmd = "create";
+										response.param = "";
+										response.args.Add("e", "failed");
 
-								// Input - Check
-								// Hashes - Not check
-								string passSalt = Crypto.genSalt();
-								string passHash = Crypto.hash(password, passSalt);
-								string pK = Crypto.genAuthToken();
+										socketList[item.socketID].SendPacket(response);
+										socketList[item.socketID].Close(10054);
+										return;
+										#endregion
+									}
+									string password = item.dataPacket.args["password"];
 
-								string query = "INSERT INTO `users` ( `user_name`, `password_hash`, `password_salt`, `authtoken`, `user_realname` ) VALUES";
-								query += String.Format("('{0}', '{1}', '{2}', '{3}', '{0}');", username, passHash, passSalt, pK);
+									// Input - Check
+									// Hashes - Not check
+									string passSalt = Crypto.genSalt();
+									string passHash = Crypto.hash(password, passSalt);
+									string pK = Crypto.genAuthToken();
 
-								this.DBConn.Query(query);
+									string query = "INSERT INTO `users` ( `user_name`, `password_hash`, `password_salt`, `authtoken`, `user_realname` ) VALUES";
+									query += String.Format("('{0}', '{1}', '{2}', '{3}', '{0}');", username, passHash, passSalt, pK);
 
-								if (this.DBConn.MySQL_Error(true) != "")
-								{
-									// Oh noes!
-									Console.ShowWarning("Error creating a new user - " + this.DBConn.MySQL_Error());
+									this.DBConn.Query(query);
 
-									// ...whoops.
-									response.cmd = "create";
-									response.param = "";
-									response.args.Add("e", "failed");
+									if (this.DBConn.MySQL_Error(true) != "")
+									{
+										// Oh noes!
+										Console.ShowWarning("Error creating a new user - " + this.DBConn.MySQL_Error());
 
-									socketList[item.socketID].SendPacket(response);
-									socketList[item.socketID].Close(10054);
-									return;
-								}
-								else
-								{
-									response.cmd = "create";
-									response.param = "";
-									response.args.Add("e", "ok");
+										// ...whoops.
+										response.cmd = "create";
+										response.param = "";
+										response.args.Add("e", "failed");
 
-									socketList[item.socketID].SendPacket(response);
-									socketList[item.socketID].Close(0);
-								}
+										socketList[item.socketID].SendPacket(response);
+										socketList[item.socketID].Close(10054);
+										return;
+									}
+									else
+									{
+										response.cmd = "create";
+										response.param = "";
+										response.args.Add("e", "ok");
 
-								break;
+										socketList[item.socketID].SendPacket(response);
+										socketList[item.socketID].Close(0);
+									}
 
+									break;
+								#endregion
+
+								#region Login Packet
+								case "login":
+									username = item.dataPacket.param;
+									if (username == "")
+									{
+										#region Lol...whoops.
+										response.cmd = "login";
+										response.param = "";
+										response.args.Add("e", "failed");
+
+										socketList[item.socketID].SendPacket(response);
+										socketList[item.socketID].Close(10054);
+										return;
+										#endregion
+									}
+									if (!item.dataPacket.args.ContainsKey("password"))
+									{
+										#region Lol...whoops.
+										response.cmd = "login";
+										response.param = username;
+										response.args.Add("e", "failed");
+
+										socketList[item.socketID].SendPacket(response);
+										socketList[item.socketID].Close(10054);
+										return;
+										#endregion
+									}
+									password = item.dataPacket.args["password"];
+
+									query = "SELECT `user_id`, `authtoken`, `password_hash`, `password_salt` FROM `users` WHERE `user_name` = '{0}' LIMIT 1;";
+									query = String.Format(query, DBConn.EscapeString(username));
+									Net.DBResult result = DBConn.Query(query);
+									if (result.GetNumRows() > 0)
+									{
+										Hashtable row = result.FetchRow();
+
+										string hash = (string) row[2];
+										string salt = (string) row[3];
+
+										string tryhash = Crypto.hash(password, salt);
+
+										if (hash != tryhash)
+										{
+											response.cmd = "login";
+											response.param = username;
+											response.args.Add("e", "failed");
+
+											socketList[item.socketID].SendPacket(response);
+											socketList[item.socketID].Close(10054);
+											return;
+										}
+										else
+										{
+											string pk;
+											if ((string) row[1] == "")
+											{
+												pk = Crypto.genAuthToken();
+												query = "UPDATE `users` SET `authtoken` = '{0}' WHERE `user_id` = {1} LIMIT 1;";
+												query = string.Format(query, pk, (uint) row[0]);
+												result = DBConn.Query(query);
+												if (result.GetAffectedRows() != 1)
+												{
+													response.cmd = "login";
+													response.param = username;
+													response.args.Add("e", "failed");
+
+													socketList[item.socketID].SendPacket(response);
+													socketList[item.socketID].Close(10054);
+													return;
+												}
+											}
+											else
+											{
+												pk = (string) row[1];
+											}
+											response.cmd = "login";
+											response.param = username;
+											response.args.Add("e", "ok");
+											response.args.Add("pk", pk);
+
+											socketList[item.socketID].SendPacket(response);
+											socketList[item.socketID].Close(0);
+											return;
+										}
+									}
+									else
+									{
+										response.cmd = "login";
+										response.param = username;
+										response.args.Add("e", "failed");
+
+										socketList[item.socketID].SendPacket(response);
+										socketList[item.socketID].Close(10054);
+										return;
+									}
+									break;
+								#endregion
+							}
 						}
 					}
 				}
@@ -323,6 +446,7 @@ namespace DemonServer
 			}
 		}
 		#endregion
+		
 		private struct QueueItem
 		{
 			public Packet dataPacket;

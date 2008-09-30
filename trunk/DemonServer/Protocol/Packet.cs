@@ -83,6 +83,7 @@ namespace DemonServer.Protocol
 				if ((nextLines.Length == 0) || (nextLines[0] == '\n') || (nextLines[0] == '\0')) break;
 
 				lineLength = nextLines.IndexOf('\n');
+				if (lineLength == -1) lineLength = nextLines.IndexOf('\0'); // Try null as terminator.
 				valuePos = nextLines.IndexOf('=');
 
 				if (valuePos > lineLength) break;
@@ -122,25 +123,25 @@ namespace DemonServer.Protocol
 		#region Public Methods
 		public override string ToString()
 		{
-			StringBuilder packetS = new StringBuilder();
+			string packetStr = "";
 
-			packetS.Append(this.cmd);
-			if (this.param != "") packetS.AppendFormat(" {0}\n", this.param);
-			else packetS.Append("\n");
+			packetStr += this.cmd;
+			if (this.param != "") packetStr += " " + this.param + "\n";
+			else packetStr += "\n";
 
 			if (this.args.Count > 0)
 			{
 				foreach (KeyValuePair<string, string> arg in this.args)
 				{
-					packetS.AppendFormat("{0}={1}\n", arg.Key, arg.Value);
+					packetStr += string.Format("{0}={1}\n", arg.Key, arg.Value);
 				}
 			}
 
-			packetS.Append("\n");
+			packetStr += "\n";
 
-			packetS.Append(this.body);
+			packetStr += this.body;
 
-			return packetS.ToString();
+			return packetStr;
 		}
 		#endregion
 
