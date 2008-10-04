@@ -46,6 +46,8 @@ namespace DemonServer.User
 		private string _artistType;
 		private string _realName;
 
+		private Dictionary<string, string> _handshakeVars;
+
 		private GPC _gpc;
 
 		private bool _authed;
@@ -80,6 +82,12 @@ namespace DemonServer.User
 			set { _realName = value; }
 		}
 
+		public Dictionary<string, string> handshakeVars
+		{
+			get { return this._handshakeVars; }
+			set { this._handshakeVars = value; }
+		}
+
 		public GPC gpc
 		{
 			get { return this._gpc; }
@@ -96,10 +104,28 @@ namespace DemonServer.User
 		#region Constructor
 		public DAmnUser()
 		{
+			this._handshakeVars = new Dictionary<string, string>();
+			this._sockets = new List<Socket>();
 		}
 		#endregion
 
 		#region Connection Functions
+		public void send(string packet) { this.send(packet, -1); }
+		public void send(string packet, int socketID)
+		{
+			lock (this._sockets)
+			{
+				foreach (Socket sock in this._sockets)
+				{
+					if (socketID > 0)
+					{
+						if (sock.SocketID != socketID) continue;
+					}
+					sock.SendPacket(packet);
+				}
+			}
+		}
+
 		public int disconnect(string reason) { return this.disconnect(reason, -1); }
 		public int disconnect(string reason, int socketID)
 		{

@@ -36,6 +36,7 @@ using System.Runtime.CompilerServices;
 
 using DemonServer.Protocol;
 using DemonServer.User;
+using DemonServer.Handler;
 
 namespace DemonServer
 {
@@ -49,6 +50,12 @@ namespace DemonServer
 			Environment.Exit(mainProg.run(args));
 		}
 		#endregion
+
+		#region Version-specific constants
+		public const string DAmnServerVersion = "0.3";
+		public const string DAmnClientVersion = "0.3";
+		#endregion
+
 		private int maxConnections;
 
 		private Socket listenSocket;
@@ -57,6 +64,8 @@ namespace DemonServer
 		private Net.DBConn DBConn;
 
 		private List<DAmnUser> clients = new List<DAmnUser>();
+		private Dictionary<string, DAmnUser> clientNames = new Dictionary<string, DAmnUser>();
+
 		private Dictionary<int, Net.Socket> socketList = new Dictionary<int, Net.Socket>();
 		private Stack<int> unusedSockets = new Stack<int>();
 
@@ -65,6 +74,7 @@ namespace DemonServer
 		private System.Timers.Timer mySQLPingTimer = new System.Timers.Timer(300000);
 
 		private UserManageDaemon umd;
+		private PacketProcessor packetProcess;
 
 		private Dictionary<string, string> Configuration;
 
@@ -131,6 +141,9 @@ namespace DemonServer
 			// Start up the user manager.
 			umd = new UserManageDaemon(this.Configuration);
 
+			// Get a packet processor.
+			this.packetProcess = PacketProcessor.getInstance();
+
 			while (true)
 			{
 				System.Threading.Thread.Sleep(100);
@@ -178,6 +191,13 @@ namespace DemonServer
 					// Start listening for the handshake.
 					socketList[SocketID].StartReceive();
 
+					// Create a DAmnUser.
+					DAmnUser user = new DAmnUser();
+					user.sockets.Add(socketList[SocketID]);
+					socketList[SocketID].UserRef = user;
+
+					clients.Add(user);
+
 					Console.ShowInfo(string.Format("New connection from \x1B[37m{0}\x1B[0m.", socketList[SocketID].Name));
 				}
 				catch (InvalidOperationException)
@@ -212,7 +232,29 @@ namespace DemonServer
 				packetText += ((char) dataByte).ToString();
 			}
 
-			// Do something with it later.
+			lock (socketList[SocketID])
+			{
+				Packet origPacket = (Packet) packetText;
+				if (origPacket.cmd.Length < 1)
+				{
+					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+				}
+
+				IPacketHandler handler = this.packetProcess.getHandler(origPacket.cmd);
+				if (handler == null)
+				{
+					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+				}
+
+				if (handler.validateState(socketList[SocketID].UserRef))
+				{
+					handler.handlePacket(origPacket, socketList[SocketID].UserRef, SocketID);
+				}
+				else
+				{
+					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+				}
+			}
 		}
 		void Program_OnDisconnect(int SocketID, SocketException Ex)
 		{

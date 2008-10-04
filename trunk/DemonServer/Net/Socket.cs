@@ -113,6 +113,10 @@ namespace DemonServer.Net
 			{
 				return this._userRef;
 			}
+			set
+			{
+				if (this._userRef == null) this._userRef = value;
+			}
 		}
 		#endregion
 
