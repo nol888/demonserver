@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace DemonServer.Handler
 {
@@ -44,6 +45,34 @@ namespace DemonServer.Handler
 			this._handlers = new Dictionary<string, IPacketHandler>();
 
 			// Register the handlers here.
+			this.registerHandler("dAmnClient", new Handlers.DAmnClientHandler());
+		}
+
+		public IPacketHandler getHandler(string packetType)
+		{
+			if (!this._handlers.ContainsKey(packetType))
+			{
+				return null;
+			}
+
+			IPacketHandler handler = this._handlers[packetType];
+
+			if (handler != null) return handler;
+
+			return null;
+		}
+		public void registerHandler(string packetType, IPacketHandler packetHandler)
+		{
+			this._handlers.Add(packetType, packetHandler);
+		}
+
+		[MethodImpl(MethodImplOptions.Synchronized)]
+		public static PacketProcessor getInstance() {
+			if (_instance == null)
+			{
+				_instance = new PacketProcessor();
+			}
+			return _instance;
 		}
 	}
 }

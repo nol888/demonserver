@@ -31,6 +31,7 @@ namespace DemonServer.User
 	{
 		BANNED = -1,
 		GUEST = 0,
-		ADMIN = 1
+		ADMIN = 1,
+		SUPERUSER = 2
 	}
 }

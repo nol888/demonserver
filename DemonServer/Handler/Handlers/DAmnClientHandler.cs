@@ -20,9 +20,9 @@
 |	along with this program.  If not, see <http://www.gnu.org/licenses/>.	|
 |																			|
 |===========================================================================|
-|	> $Date: 2008-09-21 13:57:19 -0400 (Sun, 21 Sep 2008) $
-|	> $Revision: 3 $
-|	> $Author: nol888 $
+|	> $Date$
+|	> $Revision$
+|	> $Author$
 +---------------------------------------------------------------------------+
 */
 using System;
@@ -33,12 +33,35 @@ using System.Text;
 using DemonServer.User;
 using DemonServer.Protocol;
 
-namespace DemonServer.Handler
+namespace DemonServer.Handler.Handlers
 {
-	public interface IPacketHandler
+	public class DAmnClientHandler : IPacketHandler 
 	{
-		void handlePacket(Packet origPacket, DAmnUser user, int socketID);
+		public DAmnClientHandler()
+		{
+		}
 
-		bool validateState(DAmnUser user);
+		public void handlePacket(Packet origPacket, DAmnUser user, int socketID)
+		{
+			if (origPacket.param != ServerCore.DAmnClientVersion)
+			{
+				user.disconnect("wrong version", socketID);
+				return;
+			}
+
+			// We're good, send them the response...
+			Packet respPacket = new Packet("dAmnServer", ServerCore.DAmnServerVersion);
+			respPacket.args.Add("emulatedBy", "Demon");
+
+			user.send(respPacket.ToString(), socketID); // Socket specific.
+		}
+
+		public bool validateState(DAmnUser user)
+		{
+			// You can technically use this anytime...
+			// Though it's not much of a help.
+			// I think.
+			return true;
+		}
 	}
 }
