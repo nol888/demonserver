@@ -142,7 +142,8 @@ namespace DemonServer.Net
 
 		#region Connection Functions
 		public void Close() { Close(0); }
-		public void Close(int Reason)
+		public void Close(int Reason) { Close(Reason, ""); }
+		public void Close(int Reason, string ReasonString)
 		{
 			if (this._InternalSocket == null) return;
 			try
@@ -150,7 +151,7 @@ namespace DemonServer.Net
 				this._InternalSocket.Shutdown(SocketShutdown.Both);
 				this._InternalSocket.Disconnect(false);
 
-				if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(Reason));
+				if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(Reason, ReasonString));
 			}
 			catch (System.ObjectDisposedException) { }
 			catch (Exception Ex)
@@ -246,5 +247,17 @@ namespace DemonServer.Net
 			}
 		}
 		#endregion
+	}
+
+	public class SocketException : System.Net.Sockets.SocketException {
+		public SocketException() : base() { }
+		public SocketException(int errorCode) : base(errorCode) { }
+		public SocketException(int errorCode, string errorMessage)
+			: base(errorCode)
+		{
+			this.Message = errorMessage;
+		}
+
+		public new string Message { get; protected set; }
 	}
 }

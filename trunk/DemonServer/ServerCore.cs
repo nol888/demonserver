@@ -132,6 +132,7 @@ namespace DemonServer
 			// Start up the main socket.
 			this.listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			this.listenSocket.Bind(new IPEndPoint(IPAddress.Parse(this.Configuration["bind-ip"]), int.Parse(this.Configuration["bind-port"])));
+			this.listenSocket.Listen(4);
 
 			// Start up the timers.
 			pingTimer.Elapsed += new System.Timers.ElapsedEventHandler(Socket_PingTimer);
@@ -144,10 +145,33 @@ namespace DemonServer
 			// Get a packet processor.
 			this.packetProcess = PacketProcessor.getInstance();
 
-			while (true)
+			// Start timers.
+			this.pingTimer.Start();
+			this.errorTimer.Start();
+			this.mySQLPingTimer.Start();
+
+			// Start listening.
+			this.listenSocket.BeginAccept(__clientConnected, null);
+			Console.ShowStatus("Demon is '\x1B[37mready\x1B[0m' and listening at " + listenSocket.LocalEndPoint + ".");
+
+			while (Running)
 			{
+				this.listenSocket.Poll(40, SelectMode.SelectError);
+
+				lock (this.socketList)
+				{
+					foreach (KeyValuePair<int, Net.Socket> curSocket in this.socketList)
+						if (curSocket.Value != null && (curSocket.Value.InternalSocket.Connected == false))
+							curSocket.Value.Close(0);
+				}
+
 				System.Threading.Thread.Sleep(100);
 			}
+
+			Console.ShowStatus("Demon is shutting down...disconnecting all users.");
+
+			cleanUp();
+
 			return 0;
 		}
 
@@ -238,12 +262,14 @@ namespace DemonServer
 				if (origPacket.cmd.Length < 1)
 				{
 					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+					return;
 				}
 
 				IPacketHandler handler = this.packetProcess.getHandler(origPacket.cmd);
 				if (handler == null)
 				{
 					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+					return;
 				}
 
 				if (handler.validateState(socketList[SocketID].UserRef))
@@ -256,7 +282,7 @@ namespace DemonServer
 				}
 			}
 		}
-		void Program_OnDisconnect(int SocketID, SocketException Ex)
+		void Program_OnDisconnect(int SocketID, Net.SocketException Ex)
 		{
 			if (!socketList.ContainsKey(SocketID)) return;
 			lock (this.socketList[SocketID])
@@ -286,7 +312,7 @@ namespace DemonServer
 				}
 				else
 				{
-					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected: Connection closed.");
+					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected. Reason given: " + Ex.Message);
 				}
 				socketList[SocketID] = null;
 				socketList.Remove(SocketID);
