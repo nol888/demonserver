@@ -132,17 +132,19 @@ namespace DemonServer.User
 			int connDisconnected = 0;
 			lock (this._sockets)
 			{
-				foreach (Socket sock in this._sockets)
-				{
+				for(int i = 0; i < this._sockets.Count; i++) {
 					if (socketID > 0)
 					{
-						if (sock.SocketID != socketID) continue;
+						if (this._sockets[i].SocketID != socketID) continue;
 					}
 					Packet dAmnPacket = new Packet("disconnect", "");
 					dAmnPacket.args.Add("e", reason);
 
-					sock.SendPacket((string) dAmnPacket);
-					sock.Close();
+					this._sockets[i].SendPacket((string) dAmnPacket);
+					this._sockets[i].Close();
+
+					this._sockets.Remove(this._sockets[i]);
+					i--; // Removing a socket pushes all other sockets after that back 1 spot.
 					connDisconnected++;
 				}
 			}

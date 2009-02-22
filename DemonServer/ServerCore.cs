@@ -314,6 +314,9 @@ namespace DemonServer
 				{
 					Console.ShowInfo("\x1B[37m" + socketList[SocketID].Name + "\x1B[0m disconnected. Reason given: " + Ex.Message);
 				}
+
+				// Remove all references to the socket.
+				socketList[SocketID].UserRef.sockets.Remove(socketList[SocketID]);
 				socketList[SocketID] = null;
 				socketList.Remove(SocketID);
 				unusedSockets.Push(SocketID);
