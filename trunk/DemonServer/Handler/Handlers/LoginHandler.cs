@@ -33,12 +33,35 @@ using System.Text;
 using DemonServer.User;
 using DemonServer.Protocol;
 
-namespace DemonServer.Handler
+namespace DemonServer.Handler.Handlers
 {
-	public interface IPacketHandler
+	public class DAmnClientHandler : IPacketHandler
 	{
-		void handlePacket(Packet origPacket, DAmnUser user, int socketID);
+		public DAmnClientHandler()
+		{
+		}
 
-		bool validateState(DAmnUser user);
+		public void handlePacket(Packet origPacket, DAmnUser user, int socketID)
+		{
+			if (origPacket.param.Trim() != ServerCore.DAmnClientVersion.Trim())
+			{
+				user.disconnect("wrong version", socketID);
+				return;
+			}
+
+			// We're good, send them the response...
+			Packet respPacket = new Packet("dAmnServer", ServerCore.DAmnServerVersion);
+			respPacket.args.Add("emulatedBy", "Demon");
+
+			user.send(respPacket.ToString(), socketID); // Socket specific.
+		}
+
+		public bool validateState(DAmnUser user)
+		{
+			// You can technically use this anytime...
+			// Though it's not much of a help.
+			// I think.
+			return true;
+		}
 	}
 }
