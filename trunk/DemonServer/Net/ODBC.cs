@@ -26,7 +26,7 @@
 +---------------------------------------------------------------------------+
 */
 using System;
-using System.Collections;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,7 +34,6 @@ using MySql.Data.MySqlClient;
 
 namespace DemonServer.Net
 {
-
 	public sealed class DBConn
 	{
 		#region Private Properties
@@ -124,7 +123,7 @@ namespace DemonServer.Net
 				if (InternalDBC.State == System.Data.ConnectionState.Closed)
 				{
 					Console.ShowError("MySQL Error!  MySQL server has gone away.  Query: " + QueryString);
-					return new DBResult();
+					return null;
 				}
 				MySqlCommand Command;
 				MySqlDataReader Result;
@@ -138,7 +137,7 @@ namespace DemonServer.Net
 				catch (MySqlException Ex)
 				{
 					this.LastException = Ex;
-					return new DBResult();
+					return null;
 				}
 			}
 		}
@@ -156,7 +155,7 @@ namespace DemonServer.Net
 			catch (MySqlException Ex)
 			{
 				this.LastException = Ex;
-				return new DBResult();
+				return null;
 			}
 		}
 
@@ -253,17 +252,21 @@ namespace DemonServer.Net
 	{
 		private int CurrentRow;
 		private MySqlDataReader ClosedReader;
+		private List<Dictionary<string, object>> RowCollection;
 
 		private bool Disposed;
 
-		public ArrayList Rows;
+		public ReadOnlyCollection<Dictionary<string, object>> Rows
+		{
+			get { return this.RowCollection.AsReadOnly(); }
+		}
 
 		public DBResult(MySqlDataReader Reader)
 		{
 			this.CurrentRow = 0;
 			this.Disposed = false;
-			Rows = new ArrayList();
-			Hashtable Temp = new Hashtable();
+			this.RowCollection = new List<Dictionary<string, object>>();
+			Dictionary<string, object> Temp = new Dictionary<string, object>();
 
 			int i = 0;
 
@@ -273,17 +276,17 @@ namespace DemonServer.Net
 				{
 					for (i = 0; i < Reader.FieldCount; i++)
 					{
-						Temp.Add(i, Reader.GetValue(i));
+						Temp.Add(Reader.GetName(i), Reader.GetValue(i));
 					}
 					this.Rows.Add(Temp);
-					Temp = new Hashtable();
+					Temp = new Dictionary<string, object>();
 				}
 			}
 			Reader.Close();
 			this.ClosedReader = Reader;
 		}
 
-		public Hashtable FetchRow()
+		public Dictionary<string, object> FetchRow()
 		{
 			if (this.Disposed) throw new ObjectDisposedException("DBResult");
 
