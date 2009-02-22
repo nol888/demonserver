@@ -433,7 +433,6 @@ namespace DemonServer
 										socketList[item.socketID].Close(10054);
 										return;
 									}
-									break;
 								#endregion
 							}
 						}
@@ -443,6 +442,7 @@ namespace DemonServer
 				{
 					// We were called to stop...just stop.
 				}
+				System.Threading.Thread.Sleep(100);
 			}
 		}
 		#endregion

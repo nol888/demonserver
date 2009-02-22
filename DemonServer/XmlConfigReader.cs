@@ -39,6 +39,7 @@ namespace DemonServer
 	{
 		#region Private Properties
 		private XmlReader InternalReader;
+		private StreamReader InternalStream;
 
         private string FileName;
 		#endregion
@@ -51,7 +52,7 @@ namespace DemonServer
 				throw new FileNotFoundException("Error reading configuration XML file: File not found.", Environment.CurrentDirectory + "\\" + Filename);
 			}
 
-			InternalReader = XmlReader.Create(new StreamReader(Filename));
+			InternalReader = XmlReader.Create(InternalStream = new StreamReader(Filename));
             this.FileName = Filename;
 		}
         ~XmlConfigReader()
@@ -106,6 +107,7 @@ namespace DemonServer
             finally
             {
                 this.InternalReader.Close();
+				this.InternalStream.Close();
             }
 			return Config;
 		}

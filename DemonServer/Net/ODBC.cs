@@ -249,7 +249,7 @@ namespace DemonServer.Net
 		#endregion
 	}
 
-	public struct DBResult : IDisposable
+	public class DBResult : IDisposable
 	{
 		private int CurrentRow;
 		private MySqlDataReader ClosedReader;

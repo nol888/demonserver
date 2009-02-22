@@ -43,7 +43,7 @@ namespace DemonServer.Handler.Handlers
 
 		public void handlePacket(Packet origPacket, DAmnUser user, int socketID)
 		{
-			if (origPacket.param != ServerCore.DAmnClientVersion)
+			if (origPacket.param.Trim() != ServerCore.DAmnClientVersion.Trim())
 			{
 				user.disconnect("wrong version", socketID);
 				return;
