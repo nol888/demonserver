@@ -83,6 +83,8 @@ namespace DemonServer
 			listenSocket.Bind(new IPEndPoint(IPAddress.Parse(this.configuration["bind-auc-ip"]), int.Parse(this.configuration["bind-auc-port"])));
 
 			#region Connect to the DB.
+			DBConn = Net.ODBCFactory.Instance;
+			/*
 			DBConn = new Net.DBConn(config["mysql-host"], config["mysql-user"], config["mysql-pass"],
 				config["mysql-database"], ((config["mysql-port"] != "") ? (int.Parse(config["mysql-port"])) : (3306)));
 			lock (DBConn)
@@ -106,7 +108,7 @@ namespace DemonServer
 				{
 					Console.ShowError("User manager daemon unable to connect to MySQL server!  Error: " + DBConn.MySQL_Error());
 				}
-			}
+			}*/
 			#endregion
 		
 			// Set up the packet queue.
@@ -258,6 +260,8 @@ namespace DemonServer
 		#region Queue Processor
 		void queueProcessor()
 		{
+			Thread.CurrentThread.Name = "Login Queue Processor";
+
 			while (true)
 			{
 				try
@@ -372,10 +376,10 @@ namespace DemonServer
 									Net.DBResult result = DBConn.Query(query);
 									if (result.GetNumRows() > 0)
 									{
-										Hashtable row = result.FetchRow();
+										Dictionary<string, object> row = result.FetchRow();
 
-										string hash = (string) row[2];
-										string salt = (string) row[3];
+										string hash = (string) row["password_hash"];
+										string salt = (string) row["password_salt"];
 
 										string tryhash = Crypto.hash(password, salt);
 
@@ -392,11 +396,11 @@ namespace DemonServer
 										else
 										{
 											string pk;
-											if ((string) row[1] == "")
+											if ((string) row["authtoken"] == "")
 											{
 												pk = Crypto.genAuthToken();
 												query = "UPDATE `users` SET `authtoken` = '{0}' WHERE `user_id` = {1} LIMIT 1;";
-												query = string.Format(query, pk, (uint) row[0]);
+												query = string.Format(query, pk, (uint) row["user_id"]);
 												result = DBConn.Query(query);
 												if (result.GetAffectedRows() != 1)
 												{
@@ -411,7 +415,7 @@ namespace DemonServer
 											}
 											else
 											{
-												pk = (string) row[1];
+												pk = (string) row["authtoken"];
 											}
 											response.cmd = "login";
 											response.param = username;

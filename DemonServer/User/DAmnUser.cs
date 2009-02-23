@@ -141,9 +141,8 @@ namespace DemonServer.User
 					dAmnPacket.args.Add("e", reason);
 
 					this._sockets[i].SendPacket((string) dAmnPacket);
-					this._sockets[i].Close();
+					this._sockets[i].Close(0, reason);
 
-					this._sockets.Remove(this._sockets[i]);
 					i--; // Removing a socket pushes all other sockets after that back 1 spot.
 					connDisconnected++;
 				}

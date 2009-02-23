@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using DemonServer.Net;
 using DemonServer.User;
 using DemonServer.Protocol;
 
@@ -56,7 +57,7 @@ namespace DemonServer.Handler.Handlers
 			user.send(respPacket.ToString(), socketID); // Socket specific.
 		}
 
-		public bool validateState(DAmnUser user)
+		public bool validateState(DAmnUser user, Socket userSocket)
 		{
 			// You can technically use this anytime...
 			// Though it's not much of a help.

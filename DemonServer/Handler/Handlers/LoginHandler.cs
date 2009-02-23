@@ -30,38 +30,59 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using DemonServer.Net;
 using DemonServer.User;
 using DemonServer.Protocol;
 
+using MySql.Data.MySqlClient;
+
 namespace DemonServer.Handler.Handlers
 {
-	public class DAmnClientHandler : IPacketHandler
+	public class LoginHandler : IPacketHandler
 	{
-		public DAmnClientHandler()
+		public LoginHandler()
 		{
 		}
 
 		public void handlePacket(Packet origPacket, DAmnUser user, int socketID)
 		{
-			if (origPacket.param.Trim() != ServerCore.DAmnClientVersion.Trim())
+			Packet respPacket;
+
+			if (!origPacket.args.ContainsKey("pk") || (origPacket.param == ""))
 			{
-				user.disconnect("wrong version", socketID);
+				user.disconnect("bad data", socketID);
 				return;
 			}
 
+			// Look up the data...yawn...
+			DBConn conn = ODBCFactory.Instance;
+			MySqlCommand ps = conn.Prepare("SELECT `user_id`, `authtoken`, `gpc`, `user_realname`, `user_dtype`, `user_symbol` FROM `users` WHERE `user_name` = @name LIMIT 1;");
+			ps.Parameters.AddWithValue("@name", origPacket.args["pk"]);
+			DBResult result = conn.Query(ps);
+
+			if (result.GetNumRows() != 1)
+			{
+				// Epic fail.
+				respPacket = new Packet("login", ServerCore.DAmnServerVersion);
+				respPacket.args.Add("e", "authentication failed");
+				user.send(respPacket.ToString(), socketID); // Socket specific.
+				return;
+			}
+
+			Dictionary<string, object> row = result.FetchRow();
+
 			// We're good, send them the response...
-			Packet respPacket = new Packet("dAmnServer", ServerCore.DAmnServerVersion);
+			respPacket = new Packet("login", ServerCore.DAmnServerVersion);
 			respPacket.args.Add("emulatedBy", "Demon");
 
 			user.send(respPacket.ToString(), socketID); // Socket specific.
 		}
 
-		public bool validateState(DAmnUser user)
+		public bool validateState(DAmnUser user, Socket userSocket)
 		{
-			// You can technically use this anytime...
-			// Though it's not much of a help.
-			// I think.
-			return true;
+			// Only available if we haven't logged in before.
+
+			return user.username == "";
 		}
 	}
 }

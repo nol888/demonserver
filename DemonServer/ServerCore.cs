@@ -56,6 +56,14 @@ namespace DemonServer
 		public const string DAmnClientVersion = "0.3";
 		#endregion
 
+		#region MySQL public-access for DBC singleton.
+		public static string MySQLHost;
+		public static string MySQLUsername;
+		public static string MySQLPassword;
+		public static string MySQLDatabase;
+		public static int MySQLPort;
+		#endregion
+
 		private int maxConnections;
 
 		private Socket listenSocket;
@@ -101,8 +109,14 @@ namespace DemonServer
 
 			// Connect to the DB.
 			#region Connect to the DB.
-			DBConn = new Net.DBConn(Configuration["mysql-host"], Configuration["mysql-user"], Configuration["mysql-pass"],
-				Configuration["mysql-database"], ((Configuration["mysql-port"] != "") ? (int.Parse(Configuration["mysql-port"])) : (3306)));
+			ServerCore.MySQLHost = Configuration["mysql-host"];
+			ServerCore.MySQLUsername = Configuration["mysql-user"];
+			ServerCore.MySQLPassword = Configuration["mysql-pass"];
+			ServerCore.MySQLDatabase = Configuration["mysql-database"];
+			ServerCore.MySQLPort = ((Configuration["mysql-port"] != "") ? (int.Parse(Configuration["mysql-port"])) : (3306));
+			DBConn = Net.ODBCFactory.Instance;
+			ServerCore.MySQLPassword = "";
+
 			lock (DBConn)
 			{
 				try
@@ -158,12 +172,15 @@ namespace DemonServer
 			{
 				this.listenSocket.Poll(40, SelectMode.SelectError);
 
+				/*Stack<Net.Socket> invalidSockets = new Stack<Net.Socket>();
 				lock (this.socketList)
 				{
 					foreach (KeyValuePair<int, Net.Socket> curSocket in this.socketList)
 						if (curSocket.Value != null && (curSocket.Value.InternalSocket.Connected == false))
-							curSocket.Value.Close(0);
-				}
+							invalidSockets.Push(curSocket.Value);
+
+					while (invalidSockets.Count > 0) invalidSockets.Pop().Close(0);
+				}*/
 
 				System.Threading.Thread.Sleep(100);
 			}
@@ -205,22 +222,30 @@ namespace DemonServer
 				{
 					int SocketID = unusedSockets.Pop();
 
-					// Set up the event listeners.
-					socketList.Add(SocketID, null);
-					socketList[SocketID] = new Net.Socket(SocketID, listenSocket.EndAccept(Result));
-					socketList[SocketID].OnDataArrival += new Net.Socket.__OnDataArrival(Program_OnDataArrival);
-					socketList[SocketID].OnDisconnect += new Net.Socket.__OnDisconnect(Program_OnDisconnect);
-					socketList[SocketID].OnError += new Net.Socket.__OnError(Program_OnError);
+					lock (this.socketList)
+					{
+						// Set up the event listeners.
+						socketList.Add(SocketID, null);
+						socketList[SocketID] = new Net.Socket(SocketID, listenSocket.EndAccept(Result));
+						socketList[SocketID].OnDataArrival += new Net.Socket.__OnDataArrival(Program_OnDataArrival);
+						socketList[SocketID].OnDisconnect += new Net.Socket.__OnDisconnect(Program_OnDisconnect);
+						socketList[SocketID].OnError += new Net.Socket.__OnError(Program_OnError);
 
-					// Start listening for the handshake.
-					socketList[SocketID].StartReceive();
+						// Start listening for the handshake.
+						socketList[SocketID].StartReceive();
 
-					// Create a DAmnUser.
-					DAmnUser user = new DAmnUser();
-					user.sockets.Add(socketList[SocketID]);
-					socketList[SocketID].UserRef = user;
+						// Create a DAmnUser.
+						DAmnUser user = new DAmnUser();
+						user.sockets.Add(socketList[SocketID]);
+						socketList[SocketID].UserRef = user;
 
-					clients.Add(user);
+						lock (this.clients)
+						{
+							clients.Add(user);
+						}
+					}
+
+
 
 					Console.ShowInfo(string.Format("New connection from \x1B[37m{0}\x1B[0m.", socketList[SocketID].Name));
 				}
@@ -256,36 +281,39 @@ namespace DemonServer
 				packetText += ((char) dataByte).ToString();
 			}
 
-			lock (socketList[SocketID])
+			lock (socketList)
 			{
-				Packet origPacket = (Packet) packetText;
-				if (origPacket.cmd.Length < 1)
+				lock (socketList[SocketID])
 				{
-					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
-					return;
-				}
+					Packet origPacket = (Packet) packetText;
+					if (origPacket.cmd.Length < 1)
+					{
+						socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+						return;
+					}
 
-				IPacketHandler handler = this.packetProcess.getHandler(origPacket.cmd);
-				if (handler == null)
-				{
-					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
-					return;
-				}
+					IPacketHandler handler = this.packetProcess.getHandler(origPacket.cmd);
+					if (handler == null)
+					{
+						socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+						return;
+					}
 
-				if (handler.validateState(socketList[SocketID].UserRef))
-				{
-					handler.handlePacket(origPacket, socketList[SocketID].UserRef, SocketID);
-				}
-				else
-				{
-					socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+					if (handler.validateState(socketList[SocketID].UserRef, socketList[SocketID]))
+					{
+						handler.handlePacket(origPacket, socketList[SocketID].UserRef, SocketID);
+					}
+					else
+					{
+						socketList[SocketID].UserRef.disconnect("bad data", SocketID);
+					}
 				}
 			}
 		}
 		void Program_OnDisconnect(int SocketID, Net.SocketException Ex)
 		{
 			if (!socketList.ContainsKey(SocketID)) return;
-			lock (this.socketList[SocketID])
+			lock (this.socketList)
 			{
 				if (Ex.ErrorCode > 0)
 				{
@@ -316,10 +344,21 @@ namespace DemonServer
 				}
 
 				// Remove all references to the socket.
-				socketList[SocketID].UserRef.sockets.Remove(socketList[SocketID]);
+				DAmnUser user = socketList[SocketID].UserRef;
+
+				user.sockets.Remove(socketList[SocketID]);
 				socketList[SocketID] = null;
 				socketList.Remove(SocketID);
 				unusedSockets.Push(SocketID);
+
+				// Clean up if the user is gone.
+				if (user.sockets.Count == 0)
+				{
+					lock (this.clients)
+					{
+						this.clients.Remove(user);
+					}
+				}
 			}
 		}
 		void Program_OnError(int SocketID, Exception Ex)
@@ -329,7 +368,6 @@ namespace DemonServer
 		#endregion
 
 		#region Timed Events
-		[MethodImpl(MethodImplOptions.Synchronized)]
 		void Socket_PingTimer(object sender, System.Timers.ElapsedEventArgs e)
 		{
 			Packet pingPacket = new Packet("ping", "");
@@ -342,39 +380,54 @@ namespace DemonServer
 					{
 						continue;
 					}
-					foreach (Net.Socket socket in user.sockets)
-					{
-						if (socket.IsPinging)
-						{
-							continue;
-						}
 
-						socket.IsPinging = true;
-						socket.PingTime = ServerCore.time();
+					lock (user.sockets)
+					{
+						foreach (Net.Socket socket in user.sockets)
+						{
+							if (socket.IsPinging)
+							{
+								continue;
+							}
+
+							socket.IsPinging = true;
+							socket.PingTime = ServerCore.time();
+						}
 					}
 				}
 			}
 		}
-		[MethodImpl(MethodImplOptions.Synchronized)]
 		void Socket_ErrorCheck(object sender, System.Timers.ElapsedEventArgs e)
 		{
 			lock (this.clients)
 			{
+				Stack<Net.Socket> timedOutSockets = new Stack<Net.Socket>();
+
 				foreach (DAmnUser user in this.clients)
 				{
 					if (user == null)
 					{
 						continue;
 					}
-					foreach (Net.Socket socket in user.sockets)
+
+					lock (user.sockets)
 					{
-						if (!socket.IsPinging) continue;
-						if ((ServerCore.time() - socket.PingTime) >= 48)
+						foreach (Net.Socket socket in user.sockets)
 						{
-							socket.IsPinging = false;
-							user.disconnect("ping timeout", socket.SocketID);
+							if (!socket.IsPinging) continue;
+							if ((ServerCore.time() - socket.PingTime) >= 48)
+							{
+								socket.IsPinging = false;
+								timedOutSockets.Push(socket);
+							}
 						}
 					}
+				}
+
+				while (timedOutSockets.Count > 0)
+				{
+					Net.Socket temp = timedOutSockets.Pop();
+					temp.UserRef.disconnect("ping timeout", temp.SocketID);
 				}
 			}
 		}

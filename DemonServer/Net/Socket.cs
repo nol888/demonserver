@@ -54,6 +54,9 @@ namespace DemonServer.Net
 
 		private DateTime _timeConnected;
 		private DateTime _lastData;
+
+		private bool _raisedDisconnect = true;
+		private bool _socketDisposed = false;
 		#endregion
 
 		#region Public Properties
@@ -137,31 +140,38 @@ namespace DemonServer.Net
 		{
 			SockID = SocketID;
 			this.InternalSocket = ConnectedSocket;
+			this._raisedDisconnect = false;
 		}
 		#endregion
 
 		#region Connection Functions
 		public void Close() { Close(0); }
 		public void Close(int Reason) { Close(Reason, ""); }
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.Synchronized)]
 		public void Close(int Reason, string ReasonString)
 		{
 			if (this._InternalSocket == null) return;
+			if (!this._InternalSocket.Connected) return;
+
 			try
 			{
 				this._InternalSocket.Shutdown(SocketShutdown.Both);
 				this._InternalSocket.Disconnect(false);
 
-				if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(Reason, ReasonString));
+				if (!this._raisedDisconnect)
+				{
+					this._raisedDisconnect = true;
+					if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(Reason, ReasonString));
+				}
 			}
-			catch (System.ObjectDisposedException) { }
 			catch (Exception Ex)
 			{
 				if (OnError != null) OnError(SockID, Ex);
 			}
 			finally
 			{
-				try { this._InternalSocket.Close(); }
-				catch { }
+				this._InternalSocket.Close();
+				this._socketDisposed = true;
 			}
 		}
 		#endregion
@@ -190,7 +200,11 @@ namespace DemonServer.Net
 			}
 			catch (SocketException Ex)
 			{
-				if (OnDisconnect != null) OnDisconnect(SockID, Ex);
+				if (!this._raisedDisconnect && !this._InternalSocket.Connected)
+				{
+					this._raisedDisconnect = true;
+					if (OnDisconnect != null) OnDisconnect(SockID, Ex);
+				}
 				return -1;
 			}
 		}
@@ -224,23 +238,34 @@ namespace DemonServer.Net
 		{
 			try
 			{
+				// First sanity check.
+				if (this._socketDisposed) return;
+
 				int l = this._InternalSocket.EndReceive(Result);
+
+				// More state validation.
 				if (l <= 0)
 				{
-					// Disconnected.
 					this.Close(0);
 					return;
 				}
+				if (!this._InternalSocket.Connected) return;
+
 				byte[] bytes = new byte[l];
 				System.Buffer.BlockCopy(buffer, 0, bytes, 0, l);
 				StartReceive();
 				if (OnDataArrival != null) OnDataArrival(SockID, bytes);
 			}
-			catch (SocketException Ex)
+			catch (SocketException se)
 			{
-				if (OnDisconnect != null) OnDisconnect(SockID, Ex);
+				// Ensure the OnDisconnect event is never triggered more than once.
+				// Also ensure that the socket actually disconnected...
+				if (!this._raisedDisconnect && !this._InternalSocket.Connected)
+				{
+					this._raisedDisconnect = true;
+					if (OnDisconnect != null) OnDisconnect(SockID, se);
+				}
 			}
-			catch (ObjectDisposedException) { }
 			catch (Exception Ex)
 			{
 				if (OnError != null) OnError(SockID, Ex);
@@ -249,7 +274,8 @@ namespace DemonServer.Net
 		#endregion
 	}
 
-	public class SocketException : System.Net.Sockets.SocketException {
+	public class SocketException : System.Net.Sockets.SocketException
+	{
 		public SocketException() : base() { }
 		public SocketException(int errorCode) : base(errorCode) { }
 		public SocketException(int errorCode, string errorMessage)

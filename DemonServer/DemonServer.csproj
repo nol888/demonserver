@@ -53,6 +53,7 @@
     <Compile Include="Handler\Handlers\LoginHandler.cs" />
     <Compile Include="Net\ODBC.cs" />
     <Compile Include="DAmnRoom.cs" />
+    <Compile Include="Net\ODBCFactory.cs" />
     <Compile Include="UserManageDaemon.cs" />
     <Compile Include="XmlConfigReader.cs" />
     <Compile Include="Protocol\Packet.cs" />
