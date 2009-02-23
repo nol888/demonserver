@@ -20,26 +20,36 @@
 |	along with this program.  If not, see <http://www.gnu.org/licenses/>.	|
 |																			|
 |===========================================================================|
-|	> $Date$
-|	> $Revision$
-|	> $Author$
+|	> $Date: 2009-02-22 01:29:53 -0500 (Sun, 22 Feb 2009) $
+|	> $Revision: 21 $
+|	> $Author: nol888 $
 +---------------------------------------------------------------------------+
 */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using DemonServer.Net;
-using DemonServer.User;
-using DemonServer.Protocol;
-
-namespace DemonServer.Handler
+namespace DemonServer.Net
 {
-	public interface IPacketHandler
+	public sealed class ODBCFactory
 	{
-		void handlePacket(Packet origPacket, DAmnUser user, int socketID);
+		private ODBCFactory() { }
 
-		bool validateState(DAmnUser user, Socket userSocket);
+		public static DBConn Instance
+		{
+			get
+			{
+				return ODBCFactory.Nested.connection;
+			}
+		}
+
+		class Nested
+		{
+			static Nested() { }
+			
+			internal static readonly DBConn connection = new DBConn(ServerCore.MySQLHost, ServerCore.MySQLUsername, ServerCore.MySQLPassword, ServerCore.MySQLDatabase, ServerCore.MySQLPort);
+		}
 	}
 }

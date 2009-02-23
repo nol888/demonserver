@@ -258,7 +258,11 @@ namespace DemonServer.Net
 
 		public ReadOnlyCollection<Dictionary<string, object>> Rows
 		{
-			get { return this.RowCollection.AsReadOnly(); }
+			get
+			{
+				if (this.Disposed) throw new ObjectDisposedException("DBResult");
+				return this.RowCollection.AsReadOnly();
+			}
 		}
 
 		public DBResult(MySqlDataReader Reader)
@@ -278,7 +282,7 @@ namespace DemonServer.Net
 					{
 						Temp.Add(Reader.GetName(i), Reader.GetValue(i));
 					}
-					this.Rows.Add(Temp);
+					this.RowCollection.Add(Temp);
 					Temp = new Dictionary<string, object>();
 				}
 			}
@@ -290,7 +294,7 @@ namespace DemonServer.Net
 		{
 			if (this.Disposed) throw new ObjectDisposedException("DBResult");
 
-			return (Hashtable) this.Rows[CurrentRow++];
+			return this.Rows[CurrentRow++];
 		}
 
 		public int GetNumRows()
@@ -323,7 +327,7 @@ namespace DemonServer.Net
 		{
 			this.ClosedReader.Dispose();
 			this.CurrentRow = -1;
-			this.Rows = null;
+			this.RowCollection = null;
 
 			this.Disposed = true;
 		}

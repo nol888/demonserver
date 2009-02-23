@@ -45,10 +45,12 @@ namespace DemonServer
 		#region Public Methods
 		public static string hash(string input, string salt)
 		{
-			// Get unicode bytes from string and salt.
+			// Get unicode bytes from string.
 			System.Text.UnicodeEncoding str = new UnicodeEncoding();
 			byte[] inputBytes = str.GetBytes(input);
-			byte[] saltBytes = str.GetBytes(salt);
+
+			// Get bytes from salt hex string.
+			byte[] saltBytes = Crypto.GetBytes(salt);
 
 			// Hash once with salt.
 			byte[] plainText = new byte[inputBytes.Length + saltBytes.Length];
@@ -130,6 +132,24 @@ namespace DemonServer
 			}
 
 			return hashStr;
+		}
+		#endregion
+
+		#region Private Methods
+		private static byte[] GetBytes(string hexString)
+		{
+			// if odd number of characters, discard last character
+			if (hexString.Length % 2 != 0)
+			{
+				hexString = hexString.Substring(0, hexString.Length - 1);
+			}
+
+			byte[] bytes = new byte[hexString.Length / 2];
+			for (int i = 0; i < bytes.Length; i++)
+			{
+				bytes[i] = byte.Parse(new String(new Char[] { hexString[i * 2], hexString[i * 2 + 1] }), System.Globalization.NumberStyles.HexNumber);
+			}
+			return bytes;
 		}
 		#endregion
 	}

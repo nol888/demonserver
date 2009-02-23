@@ -71,5 +71,5 @@
 	Pass: Password!
 	Database: Leave out to use the default.
 	-->
-	<mysql host="192.168.1.155" port="3066" user="demonserver" pass="pwMdZhFTUUG7ZWCJ" database="demonserver" />
+	<mysql host="67.23.3.203" port="3306" user="demonserver" pass="pwMdZhFTUUG7ZWCJ" database="demonserver" />
 </configuration>
