@@ -46,6 +46,7 @@ namespace DemonServer.Handler
 
 			// Register the handlers here.
 			this.registerHandler("dAmnClient", new Handlers.DAmnClientHandler());
+			this.registerHandler("login", new Handlers.LoginHandler());
 		}
 
 		public IPacketHandler getHandler(string packetType)

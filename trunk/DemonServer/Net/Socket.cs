@@ -70,6 +70,7 @@ namespace DemonServer.Net
 		{
 			get
 			{
+				if (!this.InternalSocket.Connected) return "Disconnected socket";
 				return this.InternalSocket.RemoteEndPoint.ToString();
 			}
 		}
@@ -155,14 +156,14 @@ namespace DemonServer.Net
 
 			try
 			{
-				this._InternalSocket.Shutdown(SocketShutdown.Both);
-				this._InternalSocket.Disconnect(false);
-
 				if (!this._raisedDisconnect)
 				{
 					this._raisedDisconnect = true;
 					if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(Reason, ReasonString));
 				}
+
+				this._InternalSocket.Shutdown(SocketShutdown.Both);
+				this._InternalSocket.Disconnect(false);
 			}
 			catch (Exception Ex)
 			{
@@ -213,19 +214,7 @@ namespace DemonServer.Net
 			if (PacketString.Length == 0) return 0;
 			if (this._InternalSocket.Connected == false) return -1;
 
-			byte[] stringBytes = new byte[PacketString.Length];
-			// Hackhack.
-			for (int i = 0; i < (PacketString.Length - 1); i++)
-			{
-				if (PacketString[i] > 255)
-				{
-					// Should never happen...but...
-					throw new ArgumentException("PacketString");
-				}
-				stringBytes[i] = (byte) PacketString[i];
-			}
-
-			return this.SendPacket(stringBytes);
+			return this.SendPacket(Encoding.ASCII.GetBytes(PacketString));
 		}
 		public int SendPacket(DemonServer.Protocol.Packet Packet)
 		{
