@@ -56,8 +56,8 @@ namespace DemonServer.Handler.Handlers
 
 			// Look up the data...yawn...
 			DBConn conn = ODBCFactory.Instance;
-			MySqlCommand ps = conn.Prepare("SELECT `user_id`, `authtoken`, `gpc`, `user_realname`, `user_dtype`, `user_symbol` FROM `users` WHERE `user_name` = @name LIMIT 1;");
-			ps.Parameters.AddWithValue("@name", origPacket.param);
+			MySqlCommand ps = conn.Prepare("SELECT `user_id`, `authtoken`, `gpc`, `user_realname`, `user_dtype`, `user_symbol` FROM `users` WHERE `user_name` = ?name LIMIT 1;");
+			ps.Parameters.AddWithValue("?name", origPacket.param);
 			DBResult result = conn.Query(ps);
 
 			if (result.GetNumRows() != 1)
@@ -89,9 +89,9 @@ namespace DemonServer.Handler.Handlers
 				user = null;
 			} else {
 				user.Username = origPacket.param;
-				user.GPC = (GPC) (byte) row["gpc"];
+				user.GPC = (GPC) (sbyte) row["gpc"];
 				user.RealName = (string) row["user_realname"];
-				user.UserID = (int) row["user_id"];
+				user.UserID = (uint) row["user_id"];
 				user.ArtistType = (string) row["user_dtype"];
 				user.DeviantSymbol = (string) row["user_symbol"];
 
@@ -103,7 +103,7 @@ namespace DemonServer.Handler.Handlers
 			respPacket.args.Add("symbol", (string) row["user_symbol"]);
 			respPacket.args.Add("realname", (string) row["user_realname"]);
 			respPacket.args.Add("typename", (string) row["user_dtype"]);
-			respPacket.args.Add("gpc", Enum.GetName(typeof(GPC), (int) (byte) row["gpc"]));
+			respPacket.args.Add("gpc", Enum.GetName(typeof(GPC), (int) (sbyte) row["gpc"]));
 
 			user.send(respPacket.ToString(), socketID); // Socket specific.
 		}

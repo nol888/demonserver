@@ -40,7 +40,7 @@ namespace DemonServer.User
 		#region Public Properties
 		public List<Socket> Sockets { get; set; }
 
-		public int UserID { get; set; }
+		public uint UserID { get; set; }
 
 		public string Username { get; set; }
 
