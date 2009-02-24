@@ -161,7 +161,9 @@ namespace DemonServer.Net
 
 		public MySqlCommand Prepare(string QueryString)
 		{
-			MySqlCommand Command = new MySqlCommand(QueryString, this.InternalDBC);
+			MySqlCommand Command = new MySqlCommand();
+			Command.Connection = this.InternalDBC;
+			Command.CommandText = QueryString;
 			Command.Prepare();
 
 			return Command;

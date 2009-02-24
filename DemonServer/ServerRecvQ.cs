@@ -76,6 +76,12 @@ namespace DemonServer
 								QueueItem item = this.recvQueue.Dequeue();
 								Socket socket = this._parent.GetSocketById(item.SocketID);
 
+								if (socket == null)
+								{
+									// The user must have disconnected already. :/ Discard.
+									continue;
+								}
+
 								IPacketHandler handler = this.process.getHandler(item.Packet.cmd);
 								if (handler == null)
 								{
