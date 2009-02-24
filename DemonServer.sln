@@ -9,6 +9,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		database.sql = database.sql
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemonClient", "DemonClient\DemonClient.csproj", "{03494F83-25EA-449F-8977-7B3E5A01E5C4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{48A545BC-51D7-4423-8C83-7873FD1E6403} = {48A545BC-51D7-4423-8C83-7873FD1E6403}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dAmn", "dAmn\dAmn.csproj", "{48A545BC-51D7-4423-8C83-7873FD1E6403}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +26,14 @@ Global
 		{E76555E3-996A-4882-8CB8-F3F1D6099335}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E76555E3-996A-4882-8CB8-F3F1D6099335}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E76555E3-996A-4882-8CB8-F3F1D6099335}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03494F83-25EA-449F-8977-7B3E5A01E5C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03494F83-25EA-449F-8977-7B3E5A01E5C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03494F83-25EA-449F-8977-7B3E5A01E5C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03494F83-25EA-449F-8977-7B3E5A01E5C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48A545BC-51D7-4423-8C83-7873FD1E6403}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48A545BC-51D7-4423-8C83-7873FD1E6403}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48A545BC-51D7-4423-8C83-7873FD1E6403}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48A545BC-51D7-4423-8C83-7873FD1E6403}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

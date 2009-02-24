@@ -118,6 +118,21 @@ namespace DemonServer.Protocol
 			get { return this._args; }
 			set { this._args = value; }
 		}
+
+		public string this[string arg] {
+			get { return this._args[arg]; }
+			set
+			{
+				if (this._args.ContainsKey(arg))
+				{
+					this._args[arg] = value;
+				}
+				else
+				{
+					this._args.Add(arg, value);
+				}
+			}
+		}
 		#endregion
 
 		#region Public Methods
@@ -140,6 +155,7 @@ namespace DemonServer.Protocol
 			packetStr += "\n";
 
 			packetStr += this.body;
+			packetStr += '\0';
 
 			return packetStr;
 		}

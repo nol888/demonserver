@@ -48,12 +48,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Console.cs" />
+    <Compile Include="ServerRecvQ.cs" />
     <Compile Include="Crypto.cs" />
     <Compile Include="Handler\Handlers\DAmnClientHandler.cs" />
     <Compile Include="Handler\Handlers\LoginHandler.cs" />
     <Compile Include="Net\ODBC.cs" />
     <Compile Include="DAmnRoom.cs" />
     <Compile Include="Net\ODBCFactory.cs" />
+    <Compile Include="ServerSendQ.cs" />
     <Compile Include="UserManageDaemon.cs" />
     <Compile Include="XmlConfigReader.cs" />
     <Compile Include="Protocol\Packet.cs" />

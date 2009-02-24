@@ -57,13 +57,13 @@ namespace DemonServer.Handler.Handlers
 			// Look up the data...yawn...
 			DBConn conn = ODBCFactory.Instance;
 			MySqlCommand ps = conn.Prepare("SELECT `user_id`, `authtoken`, `gpc`, `user_realname`, `user_dtype`, `user_symbol` FROM `users` WHERE `user_name` = @name LIMIT 1;");
-			ps.Parameters.AddWithValue("@name", origPacket.args["pk"]);
+			ps.Parameters.AddWithValue("@name", origPacket.param);
 			DBResult result = conn.Query(ps);
 
 			if (result.GetNumRows() != 1)
 			{
 				// Epic fail.
-				respPacket = new Packet("login", ServerCore.DAmnServerVersion);
+				respPacket = new Packet("login", origPacket.param);
 				respPacket.args.Add("e", "authentication failed");
 				user.send(respPacket.ToString(), socketID); // Socket specific.
 				return;
@@ -71,9 +71,39 @@ namespace DemonServer.Handler.Handlers
 
 			Dictionary<string, object> row = result.FetchRow();
 
-			// We're good, send them the response...
-			respPacket = new Packet("login", ServerCore.DAmnServerVersion);
-			respPacket.args.Add("emulatedBy", "Demon");
+			if (((string) row["authtoken"]).Trim() != origPacket["pk"])
+			{
+				// Epic fail.
+				respPacket = new Packet("login", origPacket.param);
+				respPacket.args.Add("e", "authentication failed");
+				user.send(respPacket.ToString(), socketID); // Socket specific.
+				return;
+			}
+
+			// We're good...check if a user already exists...
+			ServerCore core = ServerCore.GetCore();
+			if(core.ClientNames.ContainsKey(origPacket.param)) {
+				core.ClientNames[origPacket.param].Sockets.Add(core.GetSocketById(socketID));
+
+				core.Clients.Remove(user);
+				user = null;
+			} else {
+				user.Username = origPacket.param;
+				user.GPC = (GPC) (byte) row["gpc"];
+				user.RealName = (string) row["user_realname"];
+				user.UserID = (int) row["user_id"];
+				user.ArtistType = (string) row["user_dtype"];
+				user.DeviantSymbol = (string) row["user_symbol"];
+
+				core.ClientNames.Add(origPacket.param, user);
+			}
+
+			respPacket = new Packet("login", origPacket.param);
+			respPacket.args.Add("e", "ok");
+			respPacket.args.Add("symbol", (string) row["user_symbol"]);
+			respPacket.args.Add("realname", (string) row["user_realname"]);
+			respPacket.args.Add("typename", (string) row["user_dtype"]);
+			respPacket.args.Add("gpc", Enum.GetName(typeof(GPC), (int) (byte) row["gpc"]));
 
 			user.send(respPacket.ToString(), socketID); // Socket specific.
 		}
@@ -82,7 +112,7 @@ namespace DemonServer.Handler.Handlers
 		{
 			// Only available if we haven't logged in before.
 
-			return user.username == "";
+			return user.Username == null;
 		}
 	}
 }

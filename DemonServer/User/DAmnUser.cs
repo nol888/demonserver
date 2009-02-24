@@ -37,75 +37,29 @@ namespace DemonServer.User
 {
 	public class DAmnUser
 	{
-		#region Private Properties
-		private List<Socket> _sockets;
-
-		private int _userid;
-
-		private string _username;
-		private string _artistType;
-		private string _realName;
-
-		private Dictionary<string, string> _handshakeVars;
-
-		private GPC _gpc;
-
-		private bool _authed;
-		#endregion
-
 		#region Public Properties
-		public List<Socket> sockets
-		{
-			get { return this._sockets; }
-			set { this._sockets = value; }
-		}
+		public List<Socket> Sockets { get; set; }
 
-		public int userID
-		{
-			get { return this._userid; }
-			//set { this._userid = value; }
-		}
+		public int UserID { get; set; }
 
-		public string username
-		{
-			get { return _username; }
-			//set { _username = value; }
-		}
-		public string artistType
-		{
-			get { return _artistType; }
-			set { _artistType = value; }
-		}
-		public string realName
-		{
-			get { return _realName; }
-			set { _realName = value; }
-		}
+		public string Username { get; set; }
 
-		public Dictionary<string, string> handshakeVars
-		{
-			get { return this._handshakeVars; }
-			set { this._handshakeVars = value; }
-		}
+		public string ArtistType { get; set; }
+		public string RealName { get; set; }
+		public string DeviantSymbol { get; set; }
 
-		public GPC gpc
-		{
-			get { return this._gpc; }
-			set { this._gpc = value; }
-		}
+		public Dictionary<string, string> HandshakeVars { get; set; }
 
-		public bool authed
-		{
-			get { return this._authed; }
-			//set { this._authed = value; }
-		}
+		public GPC GPC { get; set; }
+
+		public bool Authed { get; set; }
 		#endregion
 
 		#region Constructor
 		public DAmnUser()
 		{
-			this._handshakeVars = new Dictionary<string, string>();
-			this._sockets = new List<Socket>();
+			this.HandshakeVars = new Dictionary<string, string>();
+			this.Sockets = new List<Socket>();
 		}
 		#endregion
 
@@ -113,15 +67,16 @@ namespace DemonServer.User
 		public void send(string packet) { this.send(packet, -1); }
 		public void send(string packet, int socketID)
 		{
-			lock (this._sockets)
+			lock (this.Sockets)
 			{
-				foreach (Socket sock in this._sockets)
+				foreach (Socket sock in this.Sockets)
 				{
 					if (socketID > 0)
 					{
 						if (sock.SocketID != socketID) continue;
 					}
-					sock.SendPacket(packet);
+
+					ServerCore.GetCore().SendToSocket(sock, packet);
 				}
 			}
 		}
@@ -130,18 +85,18 @@ namespace DemonServer.User
 		public int disconnect(string reason, int socketID)
 		{
 			int connDisconnected = 0;
-			lock (this._sockets)
+			lock (this.Sockets)
 			{
-				for(int i = 0; i < this._sockets.Count; i++) {
+				for (int i = 0; i < this.Sockets.Count; i++)
+				{
 					if (socketID > 0)
 					{
-						if (this._sockets[i].SocketID != socketID) continue;
+						if (this.Sockets[i].SocketID != socketID) continue;
 					}
 					Packet dAmnPacket = new Packet("disconnect", "");
 					dAmnPacket.args.Add("e", reason);
 
-					this._sockets[i].SendPacket((string) dAmnPacket);
-					this._sockets[i].Close(0, reason);
+					ServerCore.GetCore().SendToSocket(this.Sockets[i], dAmnPacket);
 
 					i--; // Removing a socket pushes all other sockets after that back 1 spot.
 					connDisconnected++;
