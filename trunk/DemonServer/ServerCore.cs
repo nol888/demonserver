@@ -351,6 +351,14 @@ namespace DemonServer
 					{
 						this.Clients.Remove(user);
 					}
+
+					if ((user.Username != null) && this.ClientNames.ContainsKey(user.Username))
+					{
+						lock (this.ClientNames)
+						{
+							this.ClientNames.Remove(user.Username);
+						}
+					}
 				}
 			}
 		}

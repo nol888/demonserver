@@ -86,7 +86,7 @@ namespace DemonServer.Handler.Handlers
 				core.ClientNames[origPacket.param].Sockets.Add(core.GetSocketById(socketID));
 
 				core.Clients.Remove(user);
-				user = null;
+				user = core.ClientNames[origPacket.param];
 			} else {
 				user.Username = origPacket.param;
 				user.GPC = (GPC) (sbyte) row["gpc"];
