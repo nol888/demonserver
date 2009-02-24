@@ -10,52 +10,39 @@
     using System.Text.RegularExpressions;
     using System.Windows.Forms;
 
-    public class Main : Form
+    public partial class Main : Form
     {
-        private Button btnSend;
-        private ComboBox cbChatList;
-        private ToolStripMenuItem chatroomsToolStripMenuItem;
-        private IContainer components = null;
         private dAmn dAmnConnection = new dAmn();
         private Queue<PendingHTMLWrite> docQueue = new Queue<PendingHTMLWrite>();
-        private ToolStripMenuItem exitToolStripMenuItem;
-        private ToolStripMenuItem fileToolStripMenuItem;
         private states lastState = states.DISCONNECTED;
         private Dictionary<string, Dictionary<string, Userinfo>> members = new Dictionary<string, Dictionary<string, Userinfo>>();
-        private MenuStrip menuStrip1;
         private Dictionary<string, Dictionary<string, privclass>> privclassorders = new Dictionary<string, Dictionary<string, privclass>>();
-        private Timer queueTimer;
-        private ToolStripMenuItem refreshChatlistToolStripMenuItem;
+        
         private List<RoomInfo> Rooms = new List<RoomInfo>();
-        private ToolStripSeparator toolStripSeparator1;
-        private TreeView tvUserTree;
-        private TextBox txtChat;
-        private WebBrowser wbDisplay;
 
-        public Main()
-        {
-			this.components = new Container();
+		public Main()
+		{
+			InitializeComponent();
 
-            this.InitializeComponent();
-            this.dAmnConnection.server = Program.Server;
-            this.dAmnConnection.port = 0xf3c;
-            this.dAmnConnection.SelfJoin += new dAmn.dlgJP(this.dAmnConnection_SelfJoin);
-            this.dAmnConnection.SelfPart += new dAmn.dlgJP(this.dAmnConnection_SelfPart);
-            this.dAmnConnection.PropertyUpdate += new dAmn.dlgPropUpdate(this.dAmnConnection_PropertyUpdate);
-            this.dAmnConnection.Privchg += new dAmn.dlgPrivchg(this.dAmnConnection_Privchg);
-            this.dAmnConnection.Kicked += new dAmn.dlgKicked(this.dAmnConnection_Kicked);
-            this.dAmnConnection.Kick += new dAmn.dlgKicked(this.dAmnConnection_Kick);
-            this.dAmnConnection.Error += new dAmn.dlgError(this.dAmnConnection_Error);
-            this.dAmnConnection.Message += new dAmn.dlgMessage(this.dAmnConnection_Message);
-            this.dAmnConnection.StateChange += new dAmn.dlgState(this.dAmnConnection_StateChange);
-            this.dAmnConnection.Join += new dAmn.dlgJoinPart(this.dAmnConnection_Join);
-            this.dAmnConnection.Part += new dAmn.dlgJoinPart(this.dAmnConnection_Part);
-            this.dAmnConnection.RawPacket += new dAmn.dlgPacket(this.dAmnConnection_RawPacket);
-            this.wbDisplay.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(this.wbDisplay_DocumentCompleted);
-            this.WriteHTML("system:system", "Demon Client startup complete.");
-            this.addToChatList("system:system");
-            this.cbChatList.SelectedIndex = 0;
-        }
+			this.dAmnConnection.server = Program.Server;
+			this.dAmnConnection.port = 0xf3c;
+			this.dAmnConnection.SelfJoin += new dAmn.dlgJP(this.dAmnConnection_SelfJoin);
+			this.dAmnConnection.SelfPart += new dAmn.dlgJP(this.dAmnConnection_SelfPart);
+			this.dAmnConnection.PropertyUpdate += new dAmn.dlgPropUpdate(this.dAmnConnection_PropertyUpdate);
+			this.dAmnConnection.Privchg += new dAmn.dlgPrivchg(this.dAmnConnection_Privchg);
+			this.dAmnConnection.Kicked += new dAmn.dlgKicked(this.dAmnConnection_Kicked);
+			this.dAmnConnection.Kick += new dAmn.dlgKicked(this.dAmnConnection_Kick);
+			this.dAmnConnection.Error += new dAmn.dlgError(this.dAmnConnection_Error);
+			this.dAmnConnection.Message += new dAmn.dlgMessage(this.dAmnConnection_Message);
+			this.dAmnConnection.StateChange += new dAmn.dlgState(this.dAmnConnection_StateChange);
+			this.dAmnConnection.Join += new dAmn.dlgJoinPart(this.dAmnConnection_Join);
+			this.dAmnConnection.Part += new dAmn.dlgJoinPart(this.dAmnConnection_Part);
+			this.dAmnConnection.RawPacket += new dAmn.dlgPacket(this.dAmnConnection_RawPacket);
+			this.wbDisplay.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(this.wbDisplay_DocumentCompleted);
+			this.WriteHTML("system:system", "Demon Client startup complete.");
+			this.addToChatList("system:system");
+			this.cbChatList.SelectedIndex = 0;
+		}
 
         private void addToChatList(string channel)
         {
@@ -425,15 +412,6 @@
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (this.components != null))
-            {
-                this.components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
         private void DoMemberUpdate(string room)
         {
             if (room.StartsWith("system:"))
@@ -525,105 +503,7 @@
             }
         }
 
-        private void InitializeComponent()
-        {
-            this.wbDisplay = new WebBrowser();
-            this.cbChatList = new ComboBox();
-            this.txtChat = new TextBox();
-            this.btnSend = new Button();
-            this.queueTimer = new Timer(this.components);
-            this.tvUserTree = new TreeView();
-            this.menuStrip1 = new MenuStrip();
-            this.fileToolStripMenuItem = new ToolStripMenuItem();
-            this.exitToolStripMenuItem = new ToolStripMenuItem();
-            this.chatroomsToolStripMenuItem = new ToolStripMenuItem();
-            this.refreshChatlistToolStripMenuItem = new ToolStripMenuItem();
-            this.toolStripSeparator1 = new ToolStripSeparator();
-            this.menuStrip1.SuspendLayout();
-            base.SuspendLayout();
-            this.wbDisplay.Anchor = AnchorStyles.Right | AnchorStyles.Left | AnchorStyles.Bottom | AnchorStyles.Top;
-            this.wbDisplay.Location = new Point(1, 0x36);
-            this.wbDisplay.MinimumSize = new Size(20, 20);
-            this.wbDisplay.Name = "wbDisplay";
-            this.wbDisplay.Size = new Size(0x1aa, 0x142);
-            this.wbDisplay.TabIndex = 0;
-            this.wbDisplay.Url = new Uri("about:blank", UriKind.Absolute);
-            this.wbDisplay.WebBrowserShortcutsEnabled = false;
-            this.cbChatList.Anchor = AnchorStyles.Right | AnchorStyles.Left | AnchorStyles.Top;
-            this.cbChatList.DropDownStyle = ComboBoxStyle.DropDownList;
-            this.cbChatList.FormattingEnabled = true;
-            this.cbChatList.Location = new Point(0, 0x1b);
-            this.cbChatList.Name = "cbChatList";
-            this.cbChatList.Size = new Size(0x23b, 0x15);
-            this.cbChatList.TabIndex = 1;
-            this.cbChatList.SelectedIndexChanged += new EventHandler(this.cbChatList_SelectedIndexChanged);
-            this.txtChat.Anchor = AnchorStyles.Right | AnchorStyles.Left | AnchorStyles.Bottom;
-            this.txtChat.Location = new Point(1, 0x17e);
-            this.txtChat.Name = "txtChat";
-            this.txtChat.Size = new Size(0x1e3, 20);
-            this.txtChat.TabIndex = 2;
-            this.btnSend.Anchor = AnchorStyles.Right | AnchorStyles.Bottom;
-            this.btnSend.Location = new Point(0x1eb, 0x17a);
-            this.btnSend.Name = "btnSend";
-            this.btnSend.Size = new Size(0x4b, 0x17);
-            this.btnSend.TabIndex = 3;
-            this.btnSend.Text = "&Send";
-            this.btnSend.UseVisualStyleBackColor = true;
-            this.btnSend.Click += new EventHandler(this.btnSend_Click);
-            this.queueTimer.Interval = 250;
-            this.queueTimer.Tick += new EventHandler(this.queueTimer_Tick);
-            this.tvUserTree.Anchor = AnchorStyles.Right | AnchorStyles.Bottom | AnchorStyles.Top;
-            this.tvUserTree.BorderStyle = BorderStyle.None;
-            this.tvUserTree.Indent = 10;
-            this.tvUserTree.Location = new Point(0x1b1, 0x36);
-            this.tvUserTree.Name = "tvUserTree";
-            this.tvUserTree.ShowLines = false;
-            this.tvUserTree.ShowPlusMinus = false;
-            this.tvUserTree.ShowRootLines = false;
-            this.tvUserTree.Size = new Size(0x85, 0x142);
-            this.tvUserTree.TabIndex = 4;
-            this.menuStrip1.Items.AddRange(new ToolStripItem[] { this.fileToolStripMenuItem, this.chatroomsToolStripMenuItem });
-            this.menuStrip1.Location = new Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new Size(0x23c, 0x18);
-            this.menuStrip1.TabIndex = 5;
-            this.menuStrip1.Text = "menuStrip1";
-            this.fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { this.refreshChatlistToolStripMenuItem, this.toolStripSeparator1, this.exitToolStripMenuItem });
-            this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new Size(0x25, 20);
-            this.fileToolStripMenuItem.Text = "&File";
-            this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new Size(0x98, 0x16);
-            this.exitToolStripMenuItem.Text = "&Exit";
-            this.exitToolStripMenuItem.Click += new EventHandler(this.exitToolStripMenuItem_Click);
-            this.chatroomsToolStripMenuItem.Name = "chatroomsToolStripMenuItem";
-            this.chatroomsToolStripMenuItem.Size = new Size(0x4e, 20);
-            this.chatroomsToolStripMenuItem.Text = "&Chatrooms";
-            this.refreshChatlistToolStripMenuItem.Name = "refreshChatlistToolStripMenuItem";
-            this.refreshChatlistToolStripMenuItem.Size = new Size(0x9c, 0x16);
-            this.refreshChatlistToolStripMenuItem.Text = "&Refresh Chatlist";
-            this.refreshChatlistToolStripMenuItem.Click += new EventHandler(this.refreshChatlistToolStripMenuItem_Click);
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new Size(0x99, 6);
-            base.AcceptButton = this.btnSend;
-            base.AutoScaleDimensions = new SizeF(6f, 13f);
-            base.ClientSize = new Size(0x23c, 0x19b);
-            base.Controls.Add(this.tvUserTree);
-            base.Controls.Add(this.btnSend);
-            base.Controls.Add(this.txtChat);
-            base.Controls.Add(this.cbChatList);
-            base.Controls.Add(this.wbDisplay);
-            base.Controls.Add(this.menuStrip1);
-            base.MainMenuStrip = this.menuStrip1;
-            base.Name = "Main";
-            this.Text = "Demon Chat";
-            base.Load += new EventHandler(this.Form1_Load);
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
-            base.ResumeLayout(false);
-            base.PerformLayout();
-        }
-
+        
         private void makePaneVisible(string id)
         {
             HtmlElement elementById = this.wbDisplay.Document.GetElementById(id);
@@ -692,7 +572,7 @@
 
         private void wbDisplay_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            this.wbDisplay.Document.Body.Style = "font-size:12px; background-color: #dedede";
+            this.wbDisplay.Document.Body.Style = "font-size:12px; background-color: #dedede; font-family: Verdana,Courier New,monospace";
             this.ProcessQueue();
             this.hideAll();
             this.makePaneVisible("system:system");
@@ -765,15 +645,12 @@
 
         private delegate void dlgSC(states state);
 
-        [StructLayout(LayoutKind.Sequential)]
         private struct PendingHTMLWrite
         {
             public string room;
             public string html;
             public string style;
         }
-
-        [StructLayout(LayoutKind.Sequential)]
         private struct RoomInfo
         {
             public string fullname;

@@ -12,22 +12,13 @@
     public class LoginDialog : Form
     {
         private string _pk;
-        private Button btnCancel;
-        private Button btnCreate;
-        private Button btnLogin;
-        private byte[] buff = new byte[0x400];
-        private CheckBox cbRemember;
-        private IContainer components = null;
-        private Label lblPassword;
-        private Label lblStatus;
-        private Label lblUsername;
+		private byte[] buff = new byte[0x400];
         private StringBuilder sbText = new StringBuilder();
-        private TextBox txtPassword;
-        private TextBox txtUsername;
 
         public LoginDialog()
         {
-            this.InitializeComponent();
+            InitializeComponent();
+
             this.cbRemember.Checked = Settings.Default.remember;
             this.txtUsername.Text = Settings.Default.username;
             this.txtPassword.Text = Settings.Default.password;
@@ -160,94 +151,7 @@
             return "";
         }
 
-        private void InitializeComponent()
-        {
-            this.btnLogin = new Button();
-            this.btnCreate = new Button();
-            this.txtUsername = new TextBox();
-            this.txtPassword = new TextBox();
-            this.lblUsername = new Label();
-            this.lblPassword = new Label();
-            this.btnCancel = new Button();
-            this.lblStatus = new Label();
-            this.cbRemember = new CheckBox();
-            base.SuspendLayout();
-            this.btnLogin.Location = new Point(0x13, 0x63);
-            this.btnLogin.Name = "btnLogin";
-            this.btnLogin.Size = new Size(0x4b, 0x17);
-            this.btnLogin.TabIndex = 5;
-            this.btnLogin.Text = "&Login";
-            this.btnLogin.UseVisualStyleBackColor = true;
-            this.btnLogin.Click += new EventHandler(this.btnLogin_Click);
-            this.btnCreate.Location = new Point(100, 0x63);
-            this.btnCreate.Name = "btnCreate";
-            this.btnCreate.Size = new Size(0x4b, 0x17);
-            this.btnCreate.TabIndex = 6;
-            this.btnCreate.Text = "&Create";
-            this.btnCreate.UseVisualStyleBackColor = true;
-            this.btnCreate.Click += new EventHandler(this.btnCreate_Click);
-            this.txtUsername.Location = new Point(0x4d, 14);
-            this.txtUsername.Name = "txtUsername";
-            this.txtUsername.Size = new Size(180, 20);
-            this.txtUsername.TabIndex = 1;
-            this.txtUsername.TextChanged += new EventHandler(this.textBox1_TextChanged);
-            this.txtPassword.Location = new Point(0x4d, 40);
-            this.txtPassword.Name = "txtPassword";
-            this.txtPassword.Size = new Size(180, 20);
-            this.txtPassword.TabIndex = 3;
-            this.txtPassword.UseSystemPasswordChar = true;
-            this.txtPassword.TextChanged += new EventHandler(this.txtPassword_TextChanged);
-            this.lblUsername.AutoSize = true;
-            this.lblUsername.Location = new Point(0x10, 0x15);
-            this.lblUsername.Name = "lblUsername";
-            this.lblUsername.Size = new Size(0x37, 13);
-            this.lblUsername.TabIndex = 0;
-            this.lblUsername.Text = "Username";
-            this.lblPassword.AutoSize = true;
-            this.lblPassword.Location = new Point(0x10, 0x2e);
-            this.lblPassword.Name = "lblPassword";
-            this.lblPassword.Size = new Size(0x35, 13);
-            this.lblPassword.TabIndex = 2;
-            this.lblPassword.Text = "Password";
-            this.btnCancel.Location = new Point(0xb6, 0x63);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new Size(0x4b, 0x17);
-            this.btnCancel.TabIndex = 7;
-            this.btnCancel.Text = "&Cancel";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new EventHandler(this.btnCancel_Click);
-            this.lblStatus.AutoSize = true;
-            this.lblStatus.Location = new Point(0x10, 0x43);
-            this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new Size(0, 13);
-            this.lblStatus.TabIndex = 8;
-            this.cbRemember.AutoSize = true;
-            this.cbRemember.Location = new Point(0xa3, 0x52);
-            this.cbRemember.Name = "cbRemember";
-            this.cbRemember.Size = new Size(0x5e, 0x11);
-            this.cbRemember.TabIndex = 4;
-            this.cbRemember.Text = "Remember me";
-            this.cbRemember.UseVisualStyleBackColor = true;
-            this.cbRemember.CheckedChanged += new EventHandler(this.cbRemember_CheckedChanged);
-            base.AcceptButton = this.btnLogin;
-            base.AutoScaleDimensions = new SizeF(6f, 13f);
-            base.AutoScaleMode = AutoScaleMode.Font;
-            base.ClientSize = new Size(0x11c, 0x80);
-            base.Controls.Add(this.cbRemember);
-            base.Controls.Add(this.lblStatus);
-            base.Controls.Add(this.btnCancel);
-            base.Controls.Add(this.lblPassword);
-            base.Controls.Add(this.lblUsername);
-            base.Controls.Add(this.txtPassword);
-            base.Controls.Add(this.txtUsername);
-            base.Controls.Add(this.btnCreate);
-            base.Controls.Add(this.btnLogin);
-            base.Name = "LoginDialog";
-            this.Text = "LoginDialog";
-            base.Load += new EventHandler(this.LoginDialog_Load);
-            base.ResumeLayout(false);
-            base.PerformLayout();
-        }
+        
 
         private string Login(string username, string password)
         {
