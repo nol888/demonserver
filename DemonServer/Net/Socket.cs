@@ -229,8 +229,10 @@ namespace DemonServer.Net
 			{
 				// First sanity check.
 				if (this._socketDisposed) return;
+				if (!this._InternalSocket.Connected) return;
 
-				int l = this._InternalSocket.EndReceive(Result);
+				int l = 0;
+				l = this._InternalSocket.EndReceive(Result);
 
 				// More state validation.
 				if (l <= 0)
@@ -238,21 +240,20 @@ namespace DemonServer.Net
 					this.Close(0);
 					return;
 				}
-				if (!this._InternalSocket.Connected) return;
 
 				byte[] bytes = new byte[l];
 				System.Buffer.BlockCopy(buffer, 0, bytes, 0, l);
 				StartReceive();
 				if (OnDataArrival != null) OnDataArrival(SockID, bytes);
 			}
-			catch (SocketException se)
+			catch (System.Net.Sockets.SocketException se)
 			{
 				// Ensure the OnDisconnect event is never triggered more than once.
 				// Also ensure that the socket actually disconnected...
 				if (!this._raisedDisconnect && !this._InternalSocket.Connected)
 				{
 					this._raisedDisconnect = true;
-					if (OnDisconnect != null) OnDisconnect(SockID, se);
+					if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(se.ErrorCode, "Error reading from socket."));
 				}
 			}
 			catch (Exception Ex)
