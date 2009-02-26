@@ -1,13 +1,13 @@
-﻿namespace dAmnSharp
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Net.Sockets;
-    using System.Reflection;
-    using System.Runtime.CompilerServices;
-    using System.Text;
-    using System.Text.RegularExpressions;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.RegularExpressions;
 
+namespace dAmnSharp
+{
     public class dAmn
     {
         private string _lastError;
@@ -31,62 +31,25 @@
         private StringBuilder sbText;
 
         public event dlgAdmin_CreateUpdate Admin_Create;
-
         public event dlgAdmin_RenameMove Admin_Move;
-
         public event dlgAdmin_Remove Admin_Remove;
-
         public event dlgAdmin_RenameMove Admin_Rename;
-
         public event dlgAdmin_CreateUpdate Admin_Update;
-
         public event dlgError Error;
-
         public event dlgJoinPart Join;
-
         public event dlgKicked Kick;
-
         public event dlgKicked Kicked;
-
         public event dlgMessage Message;
-
         private event dlgPacket packet;
-
         public event dlgJoinPart Part;
-
         public event dlgPrivchg Privchg;
-
         public event dlgPropUpdate PropertyUpdate;
-
         public event dlgPacket RawPacket;
-
         public event dlgJP SelfJoin;
-
         public event dlgJP SelfPart;
-
         public event dlgState StateChange;
 
-        public dAmn()
-        {
-            this.attached = false;
-            this.PacketQueue = new Queue<dAmnPacket>();
-            this.QueueLock = new object();
-            this.processing = false;
-            this.ProcessingLock = new object();
-            this.PacketLock = new object();
-            this.rooms = new Dictionary<string, dAroom>();
-            this._lastError = "";
-            this._username = "";
-            this._password = "";
-            this.bData = new byte[0x400];
-            this.sbText = new StringBuilder();
-            this.objLock = new object();
-            this.myState = states.DISCONNECTED;
-            this._server = "chat.deviantart.com";
-            this._port = 0xf3c;
-            this.recreated = false;
-            this.__init__();
-        }
+        public dAmn() : this("", "") { }
 
         public dAmn(string user, string pass)
         {
@@ -98,18 +61,16 @@
             this.PacketLock = new object();
             this.rooms = new Dictionary<string, dAroom>();
             this._lastError = "";
-            this._username = "";
-            this._password = "";
+			this._username = user;
+			this._password = pass;
             this.bData = new byte[0x400];
             this.sbText = new StringBuilder();
             this.objLock = new object();
             this.myState = states.DISCONNECTED;
             this._server = "chat.deviantart.com";
-            this._port = 0xf3c;
+            this._port = 3900;
             this.recreated = false;
             this.__init__();
-            this.username = user;
-            this.password = pass;
         }
 
         private void __init__()
@@ -213,7 +174,6 @@
             }
             this.dAmnSocket = new TcpClient();
         }
-
         private void dAmn_packet(dAmnPacket p)
         {
             dAmnPacket packet;
@@ -490,7 +450,6 @@
             {
             }
         }
-
         private void dAmn_StateChange(states State)
         {
             this.internalStateHandler(State);
@@ -500,7 +459,6 @@
         {
             this.demote(room, username, "");
         }
-
         public void demote(string room, string username, string privclass)
         {
             this.raw(string.Format("send {0}\n\ndemote {1}\n\n{2}", this.parseNamespace(room), username, privclass));

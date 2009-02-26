@@ -1,4 +1,32 @@
-﻿namespace DemonClient
+﻿/*
++---------------------------------------------------------------------------+
+|	Demon - dAmn Emulator													|
+|===========================================================================|
+|	Copyright © 2008 Nol888													|
+|===========================================================================|
+|	This file is part of Demon.												|
+|																			|
+|	Demon is free software: you can redistribute it and/or modify			|
+|	it under the terms of the GNU Affero General Public License as			|
+|	published by the Free Software Foundation, either version 3 of the		|
+|	License, or (at your option) any later version.							|
+|																			|
+|	This program is distributed in the hope that it will be useful,			|
+|	but WITHOUT ANY WARRANTY; without even the implied warranty of			|
+|	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the			|
+|	GNU Affero General Public License for more details.						|
+|																			|
+|	You should have received a copy of the GNU Affero General Public License|
+|	along with this program.  If not, see <http://www.gnu.org/licenses/>.	|
+|																			|
+|===========================================================================|
+|	> $Date$
+|	> $Revision$
+|	> $Author$
++---------------------------------------------------------------------------+
+*/
+
+namespace DemonClient
 {
 	partial class LoginDialog
 	{
@@ -65,7 +93,7 @@
 			this.txtUsername.Name = "txtUsername";
 			this.txtUsername.Size = new System.Drawing.Size(180, 20);
 			this.txtUsername.TabIndex = 1;
-			this.txtUsername.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
+			this.txtUsername.TextChanged += new System.EventHandler(this.txtUsername_TextChanged);
 			// 
 			// txtPassword
 			// 
@@ -121,7 +149,6 @@
 			this.cbRemember.TabIndex = 4;
 			this.cbRemember.Text = "Remember me";
 			this.cbRemember.UseVisualStyleBackColor = true;
-			this.cbRemember.CheckedChanged += new System.EventHandler(this.cbRemember_CheckedChanged);
 			// 
 			// LoginDialog
 			// 
