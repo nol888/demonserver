@@ -96,11 +96,11 @@ namespace DemonClient
             string room = this.parseNS((string) this.cbChatList.SelectedItem);
             if (text.StartsWith("/"))
             {
-                string str3 = text.Substring(1);
-                int index = str3.IndexOf(' ');
+                string cmd = text.Substring(1);
+                int index = cmd.IndexOf(' ');
                 if (index >= 0)
                 {
-                    str3 = str3.Substring(0, index);
+                    cmd = cmd.Substring(0, index);
                     if (text.Length > (index + 2))
                     {
                         text = text.Substring(index + 2);
@@ -114,19 +114,30 @@ namespace DemonClient
                 {
                     text = "";
                 }
-                switch (str3.ToLower().Trim())
+
+				string[] textArr = text.Split(' ');
+                switch (cmd.ToLower().Trim())
                 {
                     case "join":
                         this.dAmnConnection.join(text);
                         return;
 
                     case "part":
-                        this.dAmnConnection.part(text);
+                        this.dAmnConnection.part((text == "") ? room : text);
                         return;
 
                     case "admin":
+						this.dAmnConnection.raw("send " + room + "\n\nadmin\n\n" + text);
+						return;
+
                     case "kick":
+						this.dAmnConnection.kick(room, textArr[0], text.Replace(textArr[0], ""));
+						return;
+
                     case "kill":
+						this.dAmnConnection.raw("kill login:" + textArr[0] + "\n\n" + text.Replace(textArr[0], ""));
+						return;
+
                     case "title":
                     case "topic":
                         this.WriteHTML(room, "<b>That command is not currently implemented. Sorry.</b>");
@@ -136,7 +147,7 @@ namespace DemonClient
                         this.dAmnConnection.raw(text);
                         return;
                 }
-                this.WriteHTML(room, string.Format("<b>{0} is not a valid command.</b>", str3));
+                this.WriteHTML(room, string.Format("<b>{0} is not a valid command.</b>", cmd));
             }
             else
             {
