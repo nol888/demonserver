@@ -27,6 +27,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 
@@ -34,11 +35,27 @@ namespace DemonServer
 {
 	public static class Console
 	{
+		public delegate void ControlEventHandler(ConsoleEvent consoleEvent);
+		public static event ControlEventHandler ControlEvent;
+		private static ControlEventHandler eventHandler;
+
+		public enum ConsoleEvent
+		{
+			CtrlC = 0,CtrlBreak = 1,CtrlClose = 2,CtrlLogoff = 5,CtrlShutdown = 6
+		}
+
+		static Console() {
+			Console.eventHandler = new ControlEventHandler(Handler);
+			Console.SetConsoleCtrlHandler(eventHandler, true);
+
+			GC.SuppressFinalize(Console.eventHandler);
+		}
+
 		#region Public Static Properties
 		public static string TimestampFormat = "";
 		#endregion
 
-		#region Public Functions
+		#region Public Methods
 		public static void ShowInfo(string Text, string LineTerminator)
 		{
 			StringBuilder Formatted = new StringBuilder();
@@ -83,6 +100,7 @@ namespace DemonServer
 		}
 		public static void ShowError(string Text) { ShowError(Text, "\n"); }
 
+#if DEBUG
 		public static void ShowDebug(string Text, string LineTerminator)
 		{
 			StringBuilder Formatted = new StringBuilder();
@@ -93,6 +111,10 @@ namespace DemonServer
 			WriteParseANSI(Formatted.ToString());
 		}
 		public static void ShowDebug(string Text) { ShowDebug(Text, "\n"); }
+#else
+		public static void ShowDebug(string Text, string LineTerminator) { }
+		public static void ShowDebug(string Text) { }
+#endif
 
 		public static void WriteParseANSI(string Text)
 		{
@@ -149,5 +171,16 @@ namespace DemonServer
 		}
 
 		#endregion
+
+		#region Private Methods
+		private static void Handler(ConsoleEvent consoleEvent)
+		{
+			if (ControlEvent != null)
+				ControlEvent(consoleEvent);
+		}
+		#endregion
+
+		[DllImport("kernel32.dll")]
+		static extern bool SetConsoleCtrlHandler(ControlEventHandler e, bool add);
 	}
 }

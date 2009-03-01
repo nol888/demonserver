@@ -37,6 +37,7 @@ using System.Runtime.CompilerServices;
 using DemonServer.Protocol;
 using DemonServer.User;
 using DemonServer.Handler;
+using DemonServer.Queues;
 
 namespace DemonServer
 {
@@ -97,7 +98,8 @@ namespace DemonServer
 		private ServerRecvQ recvQ;
 
 		public bool Running = true;
-		int run(string[] args)
+
+		private int run(string[] args)
 		{
 			__clientConnected = new AsyncCallback(this.clientConnected);
 			System.Console.CancelKeyPress += delegate { this.cleanUp(); };
@@ -109,6 +111,9 @@ namespace DemonServer
 			this.maxConnections = int.Parse(this.Configuration["connlimit-main"]);
 
 			Console.ShowInfo("Loaded configuration from 'config.xml'.");
+
+			// Hook console events.
+			Console.ControlEvent += new Console.ControlEventHandler(Console_ControlEvent);
 
 			// Init the socket list.
 			int i = maxConnections;
@@ -196,7 +201,7 @@ namespace DemonServer
 			return 0;
 		}
 
-		void cleanUp()
+		private void cleanUp()
 		{
 			this.Running = false;
 
@@ -368,6 +373,7 @@ namespace DemonServer
 		}
 		#endregion
 
+		#region Public ServerCore API
 		public Net.Socket GetSocketById(int socketId)
 		{
 			if (this.socketList.ContainsKey(socketId))
@@ -401,11 +407,13 @@ namespace DemonServer
 		{
 			this.sendQ.AddQueue(packet, SocketID);
 		}
+		#endregion
 
 		#region Timed Events
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		void Socket_PingTimer(object sender, System.Timers.ElapsedEventArgs e)
+		private void Socket_PingTimer(object sender, System.Timers.ElapsedEventArgs e)
 		{
+			//Console.ShowDebug("Pinging all clients...");
 			Packet pingPacket = new Packet("ping", "");
 
 			lock (this.Clients)
@@ -431,8 +439,10 @@ namespace DemonServer
 			}
 		}
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		void Socket_ErrorCheck(object sender, System.Timers.ElapsedEventArgs e)
+		private void Socket_ErrorCheck(object sender, System.Timers.ElapsedEventArgs e)
 		{
+			//Console.ShowDebug("Cleaning up dead sockets...");
+
 			lock (this.Clients)
 			{
 				Stack<Net.Socket> timedOutSockets = new Stack<Net.Socket>();
@@ -464,7 +474,7 @@ namespace DemonServer
 			}
 		}
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		void MySQLPingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+		private void MySQLPingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
 		{
 			try
 			{
@@ -479,6 +489,15 @@ namespace DemonServer
 		#endregion
 
 		#region Misc
+		private void Console_ControlEvent(Console.ConsoleEvent consoleEvent)
+		{
+			Console.ShowInfo("Caught signal, preparing to shut down...");
+
+			this.Running = false;
+
+			System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
+		}
+
 		public static int time()
 		{
 			TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
