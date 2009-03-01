@@ -138,6 +138,10 @@ namespace DemonServer.Protocol
 		#region Public Methods
 		public override string ToString()
 		{
+			return ToString(true);
+		}
+		public string ToString(bool terminatingNull)
+		{
 			string packetStr = "";
 
 			packetStr += this.cmd;
@@ -155,7 +159,7 @@ namespace DemonServer.Protocol
 			packetStr += "\n";
 
 			packetStr += this.body;
-			packetStr += '\0';
+			if(terminatingNull) packetStr += '\0';
 
 			return packetStr;
 		}
@@ -168,7 +172,7 @@ namespace DemonServer.Protocol
 		}
 		public static explicit operator string(Packet packet)
 		{
-			return packet.ToString();
+			return packet.ToString(true);
 		}
 		#endregion
 	}

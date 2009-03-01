@@ -56,6 +56,10 @@ namespace DemonServer
 		private Net.DBConn DBConn;
 
 		private Queue<QueueItem> authQueue;
+
+		private MySql.Data.MySqlClient.MySqlCommand cmdCreate;
+		private MySql.Data.MySqlClient.MySqlCommand cmdLogin;
+		private MySql.Data.MySqlClient.MySqlCommand cmdUpdateAuth;
 		#endregion
 
 		#region Public Properties
@@ -110,7 +114,10 @@ namespace DemonServer
 				}
 			}*/
 			#endregion
-		
+
+			// Set up prepared statements.
+			this.prepareStatements();
+
 			// Set up the packet queue.
 			authQueue = new Queue<QueueItem>();
 
@@ -257,6 +264,32 @@ namespace DemonServer
 		}
 		#endregion
 
+		private void prepareStatements()
+		{
+			this.cmdCreate = this.DBConn.Prepare(
+										"INSERT INTO `users` ( `user_name`, `password_hash`, `password_salt`, `authtoken`, `user_realname`) " +
+										"VALUES (?username, ?hash, ?salt, ?pk, ?realname);");
+			this.cmdCreate.Parameters.AddWithValue("?username", "");
+			this.cmdCreate.Parameters.AddWithValue("?hash", "");
+			this.cmdCreate.Parameters.AddWithValue("?salt", "");
+			this.cmdCreate.Parameters.AddWithValue("?pk", "");
+			this.cmdCreate.Parameters.AddWithValue("?realname", "");
+
+			this.cmdLogin = this.DBConn.Prepare(
+										"SELECT `user_id`, `authtoken`, `password_hash`, `password_salt` " +
+										"FROM `users` " +
+										"WHERE `user_name` = ?username " +
+										"LIMIT 1;");
+			this.cmdLogin.Parameters.AddWithValue("?username", "");
+
+			this.cmdUpdateAuth = this.DBConn.Prepare(
+										"UPDATE `users` " +
+										"SET `authtoken` = ?pk " +
+										"WHERE `user_id` = ?userid LIMIT 1;");
+			this.cmdUpdateAuth.Parameters.AddWithValue("?pk", "");
+			this.cmdUpdateAuth.Parameters.AddWithValue("?userid", 0);
+		}
+
 		#region Queue Processor
 		void queueProcessor()
 		{
@@ -272,6 +305,12 @@ namespace DemonServer
 						{
 							QueueItem item = this.authQueue.Dequeue();
 							Packet response = new Packet();
+
+							if (!this.DBConn.IsConnected())
+							{
+								this.DBConn.Connect();
+								this.prepareStatements();
+							}
 
 							switch (item.dataPacket.cmd.ToLower())
 							{
@@ -310,10 +349,15 @@ namespace DemonServer
 									string passHash = Crypto.hash(password, passSalt);
 									string pK = Crypto.genAuthToken();
 
-									string query = "INSERT INTO `users` ( `user_name`, `password_hash`, `password_salt`, `authtoken`, `user_realname` ) VALUES";
-									query += String.Format("('{0}', '{1}', '{2}', '{3}', '{0}');", username, passHash, passSalt, pK);
+									
 
-									this.DBConn.Query(query);
+									this.cmdCreate.Parameters["?username"].Value = username;
+									this.cmdCreate.Parameters["?hash"].Value = passHash;
+									this.cmdCreate.Parameters["?salt"].Value = passSalt;
+									this.cmdCreate.Parameters["?pk"].Value = pK;
+									this.cmdCreate.Parameters["?realname"].Value = username;
+
+									this.DBConn.Query(this.cmdCreate);
 
 									if (this.DBConn.MySQL_Error(true) != "")
 									{
@@ -371,9 +415,9 @@ namespace DemonServer
 									}
 									password = item.dataPacket.args["password"];
 
-									query = "SELECT `user_id`, `authtoken`, `password_hash`, `password_salt` FROM `users` WHERE `user_name` = '{0}' LIMIT 1;";
-									query = String.Format(query, DBConn.EscapeString(username));
-									Net.DBResult result = DBConn.Query(query);
+									this.cmdLogin.Parameters["?username"].Value = username;
+
+									Net.DBResult result = DBConn.Query(this.cmdLogin);
 									if (result.GetNumRows() > 0)
 									{
 										Dictionary<string, object> row = result.FetchRow();
@@ -399,9 +443,11 @@ namespace DemonServer
 											if ((string) row["authtoken"] == "")
 											{
 												pk = Crypto.genAuthToken();
-												query = "UPDATE `users` SET `authtoken` = '{0}' WHERE `user_id` = {1} LIMIT 1;";
-												query = string.Format(query, pk, (uint) row["user_id"]);
-												result = DBConn.Query(query);
+
+												this.cmdUpdateAuth.Parameters["?userid"].Value = row["user_id"];
+												this.cmdUpdateAuth.Parameters["?pk"].Value = pk;
+
+												result = DBConn.Query(this.cmdUpdateAuth);
 												if (result.GetAffectedRows() != 1)
 												{
 													response.cmd = "login";
@@ -450,7 +496,7 @@ namespace DemonServer
 			}
 		}
 		#endregion
-		
+
 		private struct QueueItem
 		{
 			public Packet dataPacket;

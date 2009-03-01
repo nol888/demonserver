@@ -36,7 +36,7 @@ using DemonServer.Handler;
 using DemonServer.Protocol;
 using DemonServer.User;
 
-namespace DemonServer
+namespace DemonServer.Queues
 {
 	class ServerSendQ
 	{

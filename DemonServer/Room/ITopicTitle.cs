@@ -30,21 +30,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace DemonServer
+namespace DemonServer.Room
 {
-	public class DAmnRoom
+	interface ITopicTitle
 	{
-		[Flags]
-		public enum Privs
-		{
-			Images = 1,
-			Smilies = 2,
-			Emoticons = 4,
-			Thumbs = 8,
-			Avatars = 16,
-			Websites = 32,
-			Objects = 64,
-			All = Images | Smilies | Emoticons | Thumbs | Avatars | Websites | Objects
-		}
+		int EntryId { get; set; }
+		string Text { get; set; }
+		int TimeSet { get; set; }
+		int UserSetId { get; set; }
+		string UserSetName { get; set; }
 	}
 }

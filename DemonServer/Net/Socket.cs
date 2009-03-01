@@ -27,11 +27,12 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
-using System.ComponentModel;
 
 using DemonServer.User;
 
@@ -40,15 +41,11 @@ namespace DemonServer.Net
 	public class Socket
 	{
 		#region Private Properties
-		private object a = new object();
+		private object objLock = new object();
 
 		private System.Net.Sockets.Socket _InternalSocket;
 
-		private int SockID;
 		private byte[] buffer = new byte[2048];
-
-		private bool _IsPinging = false;
-		private int _PingTime = 0;
 
 		private DAmnUser _userRef;
 
@@ -75,24 +72,10 @@ namespace DemonServer.Net
 			}
 		}
 
-		public int PingTime
-		{
-			get { return _PingTime; }
-			set { _PingTime = value; }
-		}
-		public bool IsPinging
-		{
-			get { return _IsPinging; }
-			set { _IsPinging = value; }
-		}
+		public int PingTime { get; set; }
+		public bool IsPinging { get; set; }
 
-		public int SocketID
-		{
-			get
-			{
-				return this.SockID;
-			}
-		}
+		public int SocketID { get; private set; }
 
 		public int SecondsSinceConnected
 		{
@@ -139,7 +122,7 @@ namespace DemonServer.Net
 		#region Constructor
 		public Socket(int SocketID, System.Net.Sockets.Socket ConnectedSocket)
 		{
-			SockID = SocketID;
+			this.SocketID = SocketID;
 			this.InternalSocket = ConnectedSocket;
 			this._raisedDisconnect = false;
 		}
@@ -148,7 +131,7 @@ namespace DemonServer.Net
 		#region Connection Functions
 		public void Close() { Close(0); }
 		public void Close(int Reason) { Close(Reason, ""); }
-		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.Synchronized)]
+		[MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.Synchronized)]
 		public void Close(int Reason, string ReasonString)
 		{
 			if (this._InternalSocket == null) return;
@@ -159,7 +142,7 @@ namespace DemonServer.Net
 				if (!this._raisedDisconnect)
 				{
 					this._raisedDisconnect = true;
-					if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(Reason, ReasonString));
+					if (OnDisconnect != null) OnDisconnect(SocketID, new SocketException(Reason, ReasonString));
 				}
 
 				this._InternalSocket.Shutdown(SocketShutdown.Both);
@@ -167,7 +150,7 @@ namespace DemonServer.Net
 			}
 			catch (Exception Ex)
 			{
-				if (OnError != null) OnError(SockID, Ex);
+				if (OnError != null) OnError(SocketID, Ex);
 			}
 			finally
 			{
@@ -204,7 +187,7 @@ namespace DemonServer.Net
 				if (!this._raisedDisconnect && !this._InternalSocket.Connected)
 				{
 					this._raisedDisconnect = true;
-					if (OnDisconnect != null) OnDisconnect(SockID, Ex);
+					if (OnDisconnect != null) OnDisconnect(SocketID, Ex);
 				}
 				return -1;
 			}
@@ -244,7 +227,7 @@ namespace DemonServer.Net
 				byte[] bytes = new byte[l];
 				System.Buffer.BlockCopy(buffer, 0, bytes, 0, l);
 				StartReceive();
-				if (OnDataArrival != null) OnDataArrival(SockID, bytes);
+				if (OnDataArrival != null) OnDataArrival(SocketID, bytes);
 			}
 			catch (System.Net.Sockets.SocketException se)
 			{
@@ -253,12 +236,12 @@ namespace DemonServer.Net
 				if (!this._raisedDisconnect && !this._InternalSocket.Connected)
 				{
 					this._raisedDisconnect = true;
-					if (OnDisconnect != null) OnDisconnect(SockID, new SocketException(se.ErrorCode, "Error reading from socket."));
+					if (OnDisconnect != null) OnDisconnect(SocketID, new SocketException(se.ErrorCode, "Error reading from socket."));
 				}
 			}
 			catch (Exception Ex)
 			{
-				if (OnError != null) OnError(SockID, Ex);
+				if (OnError != null) OnError(SocketID, Ex);
 			}
 		}
 		#endregion

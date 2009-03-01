@@ -75,29 +75,22 @@ CREATE TABLE IF NOT EXISTS `chatrooms` (
 -- Table structure for table `privclasses`
 --
 
-DROP TABLE IF EXISTS `privclasses`;
 CREATE TABLE IF NOT EXISTS `privclasses` (
   `privclass_id` int(8) unsigned NOT NULL auto_increment COMMENT 'The ID of the privclass.',
   `privclass_name` varchar(255) collate utf8_bin NOT NULL COMMENT 'The name of the privclass.',
   `chatroom_id` int(6) unsigned NOT NULL COMMENT 'The room to which the privclass belongs.',
   `order` smallint(2) unsigned NOT NULL COMMENT 'The chatroom order of the privclass.',
-  `admin` bit NOT NULL default 0 COMMENT 'Admin privs?',
-  `kick` bit NOT NULL default 0 COMMENT 'Kick privs?',
-  `join` bit NOT NULL default 1 COMMENT 'Join privs?',
-  `msg` bit NOT NULL default 1 COMMENT 'Message privs?',
-  `topic` bit NOT NULL default 0 COMMENT 'Topic privs?',
-  `title` bit NOT NULL default 0 COMMENT 'Title privs?',
-  `shownotice` bit NOT NULL default 1 COMMENT 'Show notices upon join/part?',
+  `privclass_perms` int(5) unsigned NOT NULL COMMENT 'Permissions flags for admin, send, etc.  Default = 7 (Join | Msg | ShowNotice)',
   `promote` smallint(2) unsigned NOT NULL default '0' COMMENT 'Promote privs.',
   `demote` smallint(2) unsigned NOT NULL default '0' COMMENT 'Demote privs.',
-  `images` mediumint(3) NOT NULL default '0' COMMENT 'Image privs. -1 for unlimited, 0 for none, [number] max.',
-  `smilies` mediumint(3) NOT NULL default '0' COMMENT 'Smilie privs. -1 for unlimited, 0 for none, [number] max.',
-  `emoticons` mediumint(3) NOT NULL default '0' COMMENT 'Emoticon privs. -1 for unlimited, 0 for none, [number] max.',
-  `thumbs` mediumint(3) NOT NULL default '0' COMMENT 'Thumb privs. -1 for unlimited, 0 for none, [number] max.',
-  `avatars` mediumint(3) NOT NULL default '0' COMMENT 'Avatar privs. -1 for unlimited, 0 for none, [number] max.',
-  `websites` mediumint(3) NOT NULL default '0' COMMENT 'Website privs. -1 for unlimited, 0 for none, [number] max.',
-  `objects` mediumint(3) NOT NULL default '0' COMMENT 'Object privs. -1 for unlimited, 0 for none, [number] max.',
-  `default` bit NOT NULL default 0 COMMENT 'Default Privclass?',
+  `images` smallint(4) NOT NULL default '0' COMMENT 'Image privs. -1 for unlimited, 0 for none, [number] max.',
+  `smilies` smallint(4) NOT NULL default '0' COMMENT 'Smilie privs. -1 for unlimited, 0 for none, [number] max.',
+  `emoticons` smallint(4) NOT NULL default '0' COMMENT 'Emoticon privs. -1 for unlimited, 0 for none, [number] max.',
+  `thumbs` smallint(4) NOT NULL default '0' COMMENT 'Thumb privs. -1 for unlimited, 0 for none, [number] max.',
+  `avatars` smallint(4) NOT NULL default '0' COMMENT 'Avatar privs. -1 for unlimited, 0 for none, [number] max.',
+  `websites` smallint(4) NOT NULL default '0' COMMENT 'Website privs. -1 for unlimited, 0 for none, [number] max.',
+  `objects` smallint(4) NOT NULL default '0' COMMENT 'Object privs. -1 for unlimited, 0 for none, [number] max.',
+  `default` bit(1) NOT NULL default '\0' COMMENT 'Default Privclass?',
   PRIMARY KEY  (`privclass_id`),
   KEY `chatroomidref` (`chatroom_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Privclass definition table.' AUTO_INCREMENT=1 ;
