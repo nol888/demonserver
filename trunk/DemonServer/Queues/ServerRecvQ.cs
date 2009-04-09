@@ -28,6 +28,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
@@ -41,72 +42,121 @@ namespace DemonServer.Queues
 	class ServerRecvQ
 	{
 		private ServerCore _parent;
+		private int numThreads;
 
-		private Thread workerThread;
+		private List<Thread> workerThreads;
+		private Thread threadManagerThread;
+
+		private AutoResetEvent are;
+		private AutoResetEvent abortEvent;
+
 		private Queue<QueueItem> recvQueue;
 
 		private PacketProcessor process;
 
-		public ServerRecvQ(ServerCore server)
+		public ServerRecvQ(ServerCore server) : this(server, 5) { }
+		public ServerRecvQ(ServerCore server, int numThreads)
 		{
 			this._parent = server;
 
 			this.recvQueue = new Queue<QueueItem>();
 
 			this.process = PacketProcessor.getInstance();
+			this.numThreads = numThreads;
 
-			this.workerThread = new Thread(new ThreadStart(this.queueProcessor));
-			this.workerThread.Start();
+			this.are = new AutoResetEvent(false);
+			this.abortEvent = new AutoResetEvent(false);
+
+			this.workerThreads = new List<Thread>(numThreads);
+
+			this.threadManagerThread = new Thread(new ThreadStart(this.threadManager));
+			this.threadManagerThread.Start();
 		}
 
 		private void queueProcessor()
 		{
 			Thread.CurrentThread.Name = "Server RecvQ Processor";
 
-			while (true)
+			for (; ; )
 			{
+				// Wait for an event to be signalled.
+				are.WaitOne();
+
 				try
 				{
-					if (this.recvQueue.Count > 0)
+					QueueItem item;
+					lock (this.recvQueue)
 					{
-						lock (this.recvQueue)
+						try
 						{
-							while (this.recvQueue.Count > 0)
-							{
-								QueueItem item = this.recvQueue.Dequeue();
-								Socket socket = this._parent.GetSocketById(item.SocketID);
-
-								if (socket == null)
-								{
-									// The user must have disconnected already. :/ Discard.
-									continue;
-								}
-
-								IPacketHandler handler = this.process.getHandler(item.Packet.cmd);
-								if (handler == null)
-								{
-									socket.UserRef.disconnect("bad data", item.SocketID);
-									continue;
-								}
-
-								if (handler.validateState(socket.UserRef, socket))
-								{
-									handler.handlePacket(item.Packet, socket.UserRef, item.SocketID);
-								}
-								else
-								{
-									socket.UserRef.disconnect("bad data", item.SocketID);
-								}
-							}
+							item = this.recvQueue.Dequeue();
 						}
+						catch (InvalidOperationException) { continue; }
 					}
+
+					Socket socket = this._parent.GetSocketById(item.SocketID);
+
+					if (socket == null)
+					{
+						// The user must have disconnected already. :/ Discard.
+						continue;
+					}
+
+					IPacketHandler handler = this.process.getHandler(item.Packet.cmd);
+					if (handler == null)
+					{
+						socket.UserRef.disconnect("bad data", item.SocketID);
+						continue;
+					}
+
+					if (handler.validateState(socket.UserRef, socket))
+						handler.handlePacket(item.Packet, socket.UserRef, item.SocketID);
+					else
+						socket.UserRef.disconnect("bad data", item.SocketID);
 				}
 				catch (ThreadAbortException)
 				{
 					// We were called to stop...just stop.
 					return;
 				}
-				System.Threading.Thread.Sleep(100);
+			}
+		}
+		[MethodImpl(MethodImplOptions.Synchronized)]
+		private void threadManager()
+		{
+			Thread.CurrentThread.Name = "Server RecvQ Threadpool Manager";
+
+			while (!abortEvent.WaitOne(1000))
+			{
+				while (this.workerThreads.Count < this.numThreads)
+				{
+					Thread thread = new Thread(new ThreadStart(this.queueProcessor));
+					this.workerThreads.Add(thread);
+					thread.Start();
+				}
+
+				for (int i = 0; i < this.workerThreads.Count; i++)
+				{
+					{
+						switch (this.workerThreads[i].ThreadState)
+						{
+							case ThreadState.Running:
+							case ThreadState.WaitSleepJoin:
+							case ThreadState.Background:
+								break;
+							case ThreadState.Unstarted:
+								this.workerThreads[i].Start();
+								break;
+							default:
+								try { this.workerThreads[i].Abort(); }
+								catch { }
+
+								this.workerThreads[i] = new Thread(new ThreadStart(this.queueProcessor));
+								this.workerThreads[i].Start();
+								break;
+						}
+					}
+				}
 			}
 		}
 
@@ -116,11 +166,12 @@ namespace DemonServer.Queues
 			{
 				this.recvQueue.Enqueue(new QueueItem(packet, SocketID));
 			}
+			this.are.Set();
 		}
 
 		public void Abort()
 		{
-			this.workerThread.Abort();
+			this.abortEvent.Set();
 		}
 
 		private struct QueueItem
