@@ -45,7 +45,7 @@ namespace DemonServer.Net
 
 		private System.Net.Sockets.Socket _InternalSocket;
 
-		private byte[] buffer = new byte[2048];
+		private byte[] buffer = new byte[10240];
 
 		private DAmnUser _userRef;
 
@@ -163,7 +163,7 @@ namespace DemonServer.Net
 		#region Public Methods
 		public void StartReceive()
 		{
-			buffer = new byte[2048];
+			buffer = new byte[10240];
 			try
 			{
 				if (this._InternalSocket.Connected == false) return;
